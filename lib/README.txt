@@ -1,3 +1,5 @@
+From the ZWO SDK:
+
 Applicable platform:
 ubuntu:x86, x64
 armv6: raspberry pi
