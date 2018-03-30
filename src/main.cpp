@@ -17,9 +17,14 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
+	int numCams = 0; //number of connected cameras
+	int selectCam = 0; //which camera is being read (0-5)
+	int cameraCheck = 0; //Check that the camera can be read from
 	Config Config1;	//decleare config class
+	ASI_CAMERA_INFO CamInfo;
 
-	if(!cameraDetect())
+	numCams = cameraDetect();
+	if(!numCams)
 	{
 		cout << "Please connect camera and re-run\n";
 		return -1;
@@ -32,8 +37,22 @@ int main(int argc, char* argv[])
 	}
 
 	//print to check on the configfile	
-	printConfig(Config1);
+	//printConfig(Config1);
 
+	//check status of cameras
+	for(int i = 0; i < numCams; i++)
+	{
+		if(cameraCheck)
+		{
+			cout << "Unable to access camera" << i << " check that permissions have been set for camera\n";
+			return -1;
+		}
+
+		printCameraProperties(CamInfo, i);	//print properties of the camera
+
+	}
+
+	cout << "Ran successfully to completion!\n";
 	return 0;
 }
 
@@ -94,6 +113,33 @@ int readConfiguration(Config& Config1)
 	
 
 	return readCheck;
+}
+
+int cameraCheck (ASI_CAMERA_INFO CamInfo, int cameraID)
+{
+	int cameraCheck = 0;	//0 if all ok
+
+	ASIGetCameraProperty(&CamInfo, cameraID);
+	cameraCheck = ASIOpenCamera(CamInfo.CameraID);	//check that cameras can be opened
+	cameraCheck += ASIInitCamera(CamInfo.CameraID);  //check that cameras can be initialised
+
+	return cameraCheck;
+}
+
+void printCameraProperties(ASI_CAMERA_INFO CamInfo, int cameraID)
+{
+	ASIGetCameraProperty(&CamInfo, cameraID);
+	cout << "Camera\t" << CamInfo.CameraID <<endl;
+	cout << "\tCamera Model:\t" << CamInfo.Name << endl;
+	cout << "\tResolution:\t" << CamInfo.MaxWidth << "x" << CamInfo.MaxHeight << endl;
+	
+	cout << "\tColour type:\t";
+	if(!CamInfo.IsColorCam)
+		cout << "mono\n";		
+	else
+		cout <<	"Colour\n";
+	
+	cout << "\tPixel Size:\t" << CamInfo.PixelSize << "um\n";
 }
 
 void printConfig(Config& Config1)
