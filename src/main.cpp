@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 
 		//Read from the configFile
 	
-        int i = 0;
+		int i = 0;
 		while(configFile_ >> camParam >> camVal && i<7)
 		{
 	 	   reading[i] = camVal;
