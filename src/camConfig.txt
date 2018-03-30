@@ -1,1 +1,7 @@
-adsfa
+Exposure 0
+Gain 1
+Gamma 2
+WB_R 3
+WB_B 4
+Brightness 5
+USB_Traffic 6

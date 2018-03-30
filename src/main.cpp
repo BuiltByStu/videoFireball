@@ -31,12 +31,21 @@ int main(int argc, char* argv[])
         printf("%d cameras have been detected\n",numCams);
     //prints the number of cameras which have been detected
 
-    std::string configLine_;
+    string configLine_;
     ifstream configFile_ ("camConfig.txt");
 
     if(configFile_.is_open())
     {
         printf("successfully opened camConfig.txt\n");
+
+	string camParam;
+	int camVal;
+	
+
+        while(configFile_ >> camParam >> camVal)
+        {
+            cout << camVal << "<>" << endl;
+        }
         configFile_.close();
     }
     else
