@@ -17,11 +17,31 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-
-	int numCams = 0;	//number of cameras connected
 	Config Config1;	//decleare config class
-	int reading[] = {0, 0, 0, 0, 0, 0, 0}; //int array for holding read from config file
 
+	if(!cameraDetect())
+	{
+		cout << "Please connect camera and re-run\n";
+		return -1;
+	}
+
+	if(!readConfiguration(Config1))
+	{
+		cout << "Unable to read camConfig.txt\n";
+		return -1;
+	}
+
+	//print to check on the configfile	
+	printConfig(Config1);
+
+	return 0;
+}
+
+
+int cameraDetect()
+{
+	int numCams = 0;	//number of cameras connected
+	
 	printf("Checking camera connections\n");
 	//for testing, can be removed later
 
@@ -35,18 +55,24 @@ int main(int argc, char* argv[])
 		printf("%d cameras have been detected\n",numCams);
 		//prints the number of cameras which have been detected
 
+	return numCams;
+}
+
+int readConfiguration(Config& Config1)
+{
+	int reading[] = {0, 0, 0, 0, 0, 0, 0}; //int array for holding read from config file
+	int readCheck = 0;
+
 	string configLine_;
 	ifstream configFile_ ("camConfig.txt");
 
 	if(configFile_.is_open())
 	{
-		printf("successfully opened camConfig.txt\n");
-
 		string camParam;
 		int camVal;
 
 		//Read from the configFile
-	
+
 		int i = 0;
 		while(configFile_ >> camParam >> camVal && i<7)
 		{
@@ -62,19 +88,13 @@ int main(int argc, char* argv[])
 		Config1.WB_B = reading [4];
 		Config1.Bandwidth = reading [5];
 		Config1.HS_Mode = reading [6];
+
+		readCheck = 1;
 	}
 	
-	else
-		printf("Unable to read camConfig.txt\n");
 
-	//print to check on the configfile	
-	printConfig(Config1);
-
-
-
-	return 0;
+	return readCheck;
 }
-
 
 void printConfig(Config& Config1)
 {
