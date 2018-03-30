@@ -1,7 +1,7 @@
 Exposure 0
-Gain 1
-Gamma 2
+Gain 3
+Gamma 5
 WB_R 3
-WB_B 4
-Brightness 5
-USB_Traffic 6
+WB_B 7
+Bandwidth 5
+HS_Mode 6	
