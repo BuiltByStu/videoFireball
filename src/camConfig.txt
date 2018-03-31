@@ -1,7 +1,5 @@
-Exposure 0
+Exposure 5
 Gain 3
-Gamma 5
-WB_R 3
-WB_B 7
+Gamma 50
 Bandwidth 5
 HS_Mode 6	

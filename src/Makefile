@@ -8,7 +8,7 @@ LIBSPATH = -L../lib/x64
 
 
 videoFireball: main.cpp 
-	g++ main.cpp -o videoFireball $(CFLAGS) $(OPENCV) -lASICamera2
+	g++ main.cpp -g -o videoFireball $(CFLAGS) $(OPENCV) -lASICamera2
 
 
 clean: 

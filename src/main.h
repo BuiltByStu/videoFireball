@@ -19,8 +19,6 @@ class Config {
         int Exposure;
 		int Gain;
 		int Gamma;
-		int WB_R;
-		int WB_B;
 		int Bandwidth;
 		int HS_Mode;
 };

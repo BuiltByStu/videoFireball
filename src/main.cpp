@@ -18,8 +18,7 @@ using namespace std;
 int main(int argc, char* argv[])
 {
 	int numCams = 0; //number of connected cameras
-	int selectCam = 0; //which camera is being read (0-5)
-	int cameraCheck = 0; //Check that the camera can be read from
+	int camID = 0; //which camera is being read (0-5)
 	Config Config1;	//decleare config class
 	ASI_CAMERA_INFO CamInfo;
 
@@ -37,20 +36,27 @@ int main(int argc, char* argv[])
 	}
 
 	//print to check on the configfile	
-	//printConfig(Config1);
+	printConfig(Config1);
 
-	//check status of cameras
-	for(int i = 0; i < numCams; i++)
+	//check status (and properties) of cameras
+	for(camID = 0; camID < numCams; camID++)
 	{
-		if(cameraCheck)
+		if(cameraCheck(CamInfo, camID))
 		{
-			cout << "Unable to access camera" << i << " check that permissions have been set for camera\n";
+			cout << "Unable to access camera" << camID << " check that permissions have been set for camera\n";
 			return -1;
 		}
 
-		printCameraProperties(CamInfo, i);	//print properties of the camera
-
-	}
+		printCameraProperties(CamInfo, camID);	//print properties of the camera
+		
+		//set camera settings
+		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
+		//ASISetControlValue(camID,ASI_GAIN,0, ASI_FALSE); 
+		//ASISetControlValue(camID,ASI_BANDWIDTHOVERLOAD, 40, ASI_FALSE); //low transfer speed
+		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 0, ASI_FALSE);
+		//ASISetControlValue(camID,ASI_WB_B, 90, ASI_FALSE);
+	 	//ASISetControlValue(camID,ASI_WB_R, 48, ASI_TRUE);
+	}	
 
 	cout << "Ran successfully to completion!\n";
 	return 0;
@@ -93,7 +99,7 @@ int readConfiguration(Config& Config1)
 		//Read from the configFile
 
 		int i = 0;
-		while(configFile_ >> camParam >> camVal && i<7)
+		while(configFile_ >> camParam >> camVal && i<5)
 		{
 	 	   reading[i] = camVal;
 			i++;
@@ -103,10 +109,8 @@ int readConfiguration(Config& Config1)
 		Config1.Exposure = reading[0];
 		Config1.Gain = reading[1];
 		Config1.Gamma = reading[2];
-		Config1.WB_R = reading [3];
-		Config1.WB_B = reading [4];
-		Config1.Bandwidth = reading [5];
-		Config1.HS_Mode = reading [6];
+		Config1.Bandwidth = reading [3];
+		Config1.HS_Mode = reading [4];
 
 		readCheck = 1;
 	}
@@ -144,11 +148,10 @@ void printCameraProperties(ASI_CAMERA_INFO CamInfo, int cameraID)
 
 void printConfig(Config& Config1)
 {
-	cout << Config1.Exposure << endl;
-	cout << Config1.Gain << endl;
-	cout << Config1.Gamma << endl;
-	cout << Config1.WB_R << endl;
-	cout << Config1.WB_B << endl;
-	cout << Config1.Bandwidth << endl;
-	cout << Config1.HS_Mode << endl;
+	cout << "Camera configuration:\n";
+	cout << "\tExposure (ms)=\t" << Config1.Exposure << endl;
+	cout << "\tGain=\t\t" << Config1.Gain << endl;
+	cout << "\tGamma=\t\t" << Config1.Gamma << endl;
+	cout << "\tBancdwidth=\t" << Config1.Bandwidth << endl;
+	cout << "\tHighSpeedMode=\t" << Config1.HS_Mode << endl;
 }
