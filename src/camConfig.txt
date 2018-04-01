@@ -1,5 +1,5 @@
 Exposure 5
-Gain 3
+Gain 400
 Gamma 50
 Bandwidth 5
 HS_Mode 6	
