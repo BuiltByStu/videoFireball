@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 	int camID = 0; //which camera is being read (0-5)
 	Config Config1;	//decleare config class
 	ASI_CAMERA_INFO CamInfo;
-	IplImage* capture0;
+	IplImage* capture[6];
 
 	numCams = cameraDetect();
 	if(!numCams)
@@ -66,19 +66,20 @@ int main(int argc, char* argv[])
 		//Not sure if white balance (WB) needs to be set
 		//ASISetControlValue(camID,ASI_WB_B, 90, ASI_FALSE);
 	 	//ASISetControlValue(camID,ASI_WB_R, 48, ASI_TRUE);
+        capture[camID] = cvCreateImage(cvSize(WIDTH,HEIGHT), 16, 1);
+        //WIDTH=horizontal resolution, HEiGHT=vertical resolution, 16=bit depth, 1=channels
 
+        ASIStartVideoCapture(camID);
 	}
 
-    capture0 = cvCreateImage(cvSize(WIDTH,HEIGHT), 16, 1);
-    //WIDTH=horizontal resolution, HEiGHT=vertical resolution, 16=bit depth, 1=channels
 
-    ASIStartVideoCapture(0);
-    //currently limited to one camera
+	for(camID = 0; camID < numCams; camID++)
+    {
+        ASIStopVideoCapture(camID);
+        ASICloseCamera(camID);
+        cvReleaseImage(&capture[camID]);     //free the memory allocated to image capture
+    }
 
-    ASIStopVideoCapture(0);
-    //currently limited to one camera
-    ASICloseCamera(0);
-    cvReleaseImage(&capture0);     //free the memory allocated to image capture
 	cout << "Ran successfully to completion!\n";
 	return 0;
 }
