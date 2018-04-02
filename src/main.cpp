@@ -9,17 +9,16 @@ Description:Sources configuration files and assesses connected cameras
 #include "stdio.h"
 #include "ASICamera2.h"
 #include "opencv2/core/core.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc/imgproc.hpp"
 #include "main.h"
 #include <iostream>
 #include <fstream>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 using namespace std;
-
-
-#define WIDTH 3096
-#define HEIGHT 2080
 
 int main(int argc, char* argv[])
 {
@@ -56,6 +55,8 @@ int main(int argc, char* argv[])
 
 		printCameraProperties(CamInfo, camID);	//print properties of the camera
 
+
+
 		//set camera settings
 		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
 		//set exposure from config class, ASI_FALSE = not auto exposure
@@ -66,12 +67,23 @@ int main(int argc, char* argv[])
 		//Not sure if white balance (WB) needs to be set
 		//ASISetControlValue(camID,ASI_WB_B, 90, ASI_FALSE);
 	 	//ASISetControlValue(camID,ASI_WB_R, 48, ASI_TRUE);
-        capture[camID] = cvCreateImage(cvSize(WIDTH,HEIGHT), 16, 1);
-        //WIDTH=horizontal resolution, HEiGHT=vertical resolution, 16=bit depth, 1=channels
+
+        ASIGetCameraProperty(&CamInfo, camID);
+        capture[camID] = cvCreateImage(cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight), 16, 1);
+        //Set size to max resolution, 16=bit depth, 1=channels
 
         ASIStartVideoCapture(camID);
 	}
 
+    //needs to be modified for multiple cameras
+    cvNamedWindow("camera0", 0);
+    cvShowImage("camera0", capture[0]);
+
+    cvWaitKey(100);
+    usleep(500*1000);
+
+    //close all and free memory
+    cvDestroyAllWindows();
 
 	for(camID = 0; camID < numCams; camID++)
     {
