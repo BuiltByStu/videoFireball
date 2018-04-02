@@ -77,10 +77,17 @@ int main(int argc, char* argv[])
 
     //needs to be modified for multiple cameras
     cvNamedWindow("camera0", 0);
-    cvShowImage("camera0", capture[0]);
 
-    cvWaitKey(100);
-    usleep(500*1000);
+    int keepVid = 0;
+
+    //Need to add ASIGetVideoData
+    while(keepVid != 27)
+    {
+        keepVid = cvWaitKey(1);
+        cout << keepVid;
+        ASIGetVideoData(0,(unsigned char*)capture[0]->imageData,capture[0]->imageSize,Config1.Exposure);
+        cvShowImage("camera0", capture[0]);
+    }
 
     //close all and free memory
     cvDestroyAllWindows();
