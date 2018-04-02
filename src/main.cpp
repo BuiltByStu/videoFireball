@@ -20,6 +20,8 @@ Description:Sources configuration files and assesses connected cameras
 
 using namespace std;
 
+#define PREVIEWVIDEO 1 //video preview on =1, off =0
+
 int main(int argc, char* argv[])
 {
 	int numCams = 0; //number of connected cameras
@@ -55,8 +57,6 @@ int main(int argc, char* argv[])
 
 		printCameraProperties(CamInfo, camID);	//print properties of the camera
 
-
-
 		//set camera settings
 		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
 		//set exposure from config class, ASI_FALSE = not auto exposure
@@ -64,9 +64,6 @@ int main(int argc, char* argv[])
 		(camID,ASI_BANDWIDTHOVERLOAD, 100, ASI_FALSE);
 		//Allow 100% usb bandwidth
 		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 0, ASI_FALSE);
-		//Not sure if white balance (WB) needs to be set
-		//ASISetControlValue(camID,ASI_WB_B, 90, ASI_FALSE);
-	 	//ASISetControlValue(camID,ASI_WB_R, 48, ASI_TRUE);
 
         ASIGetCameraProperty(&CamInfo, camID);
         capture[camID] = cvCreateImage(cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight), 16, 1);
@@ -75,22 +72,10 @@ int main(int argc, char* argv[])
         ASIStartVideoCapture(camID);
 	}
 
-    //needs to be modified for multiple cameras
-    cvNamedWindow("camera0", 0);
+    if(PREVIEWVIDEO)
+        previewVideo(capture, numCams, Config1.Exposure);
 
-    int keepVid = 0;
 
-    //Need to add ASIGetVideoData
-    while(keepVid != 27)
-    {
-        keepVid = cvWaitKey(1);
-        cout << keepVid;
-        ASIGetVideoData(0,(unsigned char*)capture[0]->imageData,capture[0]->imageSize,Config1.Exposure);
-        cvShowImage("camera0", capture[0]);
-    }
-
-    //close all and free memory
-    cvDestroyAllWindows();
 
 	for(camID = 0; camID < numCams; camID++)
     {
@@ -195,4 +180,33 @@ void printConfig(Config& Config1)
 	cout << "\tGamma=\t\t" << Config1.Gamma << endl;
 	cout << "\tBancdwidth=\t" << Config1.Bandwidth << endl;
 	cout << "\tHighSpeedMode=\t" << Config1.HS_Mode << endl;
+}
+
+void previewVideo(IplImage* capture[6], int numCams, int exposure)
+{
+    char keepVid = 0;
+    char cameraName[8];
+
+    cout << "Press ESC to exit video preview\n";
+
+    while(keepVid!=27)
+    {
+        for(int camID = 0; camID < numCams; camID++)
+        {
+            sprintf(cameraName, "Camera%d",camID);
+            cvNamedWindow(cameraName, camID);
+
+            //needs to be scaled to 8 bit to be displayed corectly
+            IplImage * scaledVid[6];
+            scaledVid[camID] = cvCreateImage(cvGetSize(capture[camID]),8,1);
+            cvConvertScale(capture[camID],scaledVid[camID],1.0/256) ;
+
+            ASIGetVideoData(camID,(unsigned char*)scaledVid[camID]->imageData,scaledVid[camID]->imageSize,exposure);
+            cvShowImage(cameraName, scaledVid[camID]);
+            cvReleaseImage(&scaledVid[camID]);     //free the memory allocated to image capture
+        }
+        keepVid = cvWaitKey(1);
+    }
+    //close all and free memory
+    cvDestroyAllWindows();
 }

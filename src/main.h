@@ -3,7 +3,7 @@ File:		main.cpp
 Authour:	Stuart Hahn
 Version:	0.1
 Date: 		30/03/18
-Description:Header file for main.cpp. 
+Description:Header file for main.cpp.
 
 Includes the following classes:
 	Config
@@ -45,4 +45,5 @@ void printCameraProperties(ASI_CAMERA_INFO CamInfo, int cameraID);
 //For checking on the values stored to config class
 void printConfig(Config& Config1);
 
-
+//Preview video feed from cameras-converts to 8 bit for preview
+void previewVideo(IplImage* capture[6], int numCams, int exposure);
