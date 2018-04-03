@@ -15,7 +15,7 @@ Description:Sources configuration files and assesses connected cameras
 #include <iostream>
 #include <fstream>
 #include <sys/time.h>
-#include <time.h>
+#include <ctime>
 #include <unistd.h>
 
 using namespace std;
@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
 {
 	int numCams = 0; //number of connected cameras
 	int camID = 0; //which camera is being read (0-5)
+	int mode = 0; //Selects the functionality of the program
 	Config Config1;	//decleare config class
 	ASI_CAMERA_INFO CamInfo;
 	IplImage* capture[6];
@@ -69,16 +70,33 @@ int main(int argc, char* argv[])
 		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 0, ASI_FALSE);
 
         ASIGetCameraProperty(&CamInfo, camID);
-        capture[camID] = cvCreateImage(cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight), 16, 1);
+        capture[camID] = cvCreateImage(cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight), 8, 1);
         //Set size to max resolution, 16=bit depth, 1=channels
 
         ASIStartVideoCapture(camID);
 	}
 
-    if(PREVIEWVIDEO)
-        previewVideo(capture, numCams, Config1.Exposure);
+	while (mode != -1)
+	{
+		mode = modeSelectMenu();
 
-
+        switch(mode){
+            case -1:
+                cout << "exiting....\n";
+                break;
+            case 1 :
+                previewVideo(capture, numCams, Config1.Exposure);
+                break;
+            case 2 :
+                takePhoto(capture, numCams, Config1.Exposure, CamInfo);
+                break;
+            case 3 :
+                recordVideo(capture, numCams, Config1.Exposure, CamInfo, 5);
+                break;
+            default :
+                cout << "Invalid mode, please select again:\n";
+        }
+	}
 
 	for(camID = 0; camID < numCams; camID++)
     {
@@ -143,8 +161,6 @@ int readConfiguration(Config& Config1)
 
 		readCheck = 1;
 	}
-
-
 	return readCheck;
 }
 
@@ -228,4 +244,104 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
     }
     //close all and free memory
     cvDestroyAllWindows();
+}
+
+int modeSelectMenu ()
+{
+    char modeRead;
+    int mode = 0;
+
+    cout << "select mode:\n";
+    cout << "1\tVideo preview\n";
+    cout << "2\tCapture image\n";
+    cout << "3\tRecord video\n";
+    cout << "\n0\tEXIT\n";
+    cin >> modeRead;
+    mode = modeRead - '0';
+
+    if(mode == 0)
+        mode = -1;
+
+    return mode;
+}
+
+void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo)
+{
+    //This function doe not work yet
+
+    int camID = 0; //loop this once working with one camera
+    ASI_EXPOSURE_STATUS status = ASI_EXP_WORKING;
+
+    long imgSize;
+
+    if(capture[camID]->depth == 16)
+        imgSize = CamInfo.MaxWidth*CamInfo.MaxHeight*2; //+1 for 16 bit
+    else
+        imgSize = CamInfo.MaxWidth*CamInfo.MaxHeight; //+1 for 16 bit
+
+    unsigned char* imgBuf = new unsigned char[imgSize];
+
+    ASIStartExposure(camID,ASI_TRUE);//starts exposure
+    usleep(exposure*1000);//10ms
+
+    ASIStopExposure(camID);
+
+    /*while(status = ASI_EXP_WORKING)
+    {
+        ASIGetExpStatus(camID, &status);
+        cout << "stuck in here\n";
+    }*/
+
+    if(status == ASI_EXP_SUCCESS)
+    {
+        ASIGetDataAfterExp(camID,imgBuf,imgSize);
+        cvSaveImage("testImage.jpg", capture[camID]);
+    }
+    else
+    {
+        cout << "Failed to capture\n";
+    }
+
+    ASIStopExposure(camID);
+    delete[] imgBuf;
+}
+
+void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime)
+{
+
+    CvVideoWriter* writer;
+
+    int camID = 0;
+    char keepVid = 0;
+
+    if(capture[camID]->depth == 16)
+        writer = cvCreateVideoWriter("testVid.avi",CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+    else
+        writer = cvCreateVideoWriter("testVid.avi",CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+
+    clock_t startTime;
+    startTime = clock();
+
+    while(recTime >= (clock()-startTime)/CLOCKS_PER_SEC)
+    {
+        if(capture[camID]->depth == 16)
+        {
+            IplImage * scaledVid[6];
+            scaledVid[camID] = cvCreateImage(cvGetSize(capture[camID]),8,1);
+            cvConvertScale(capture[camID],scaledVid[camID],1.0/256) ;
+
+            ASIGetVideoData(camID,(unsigned char*)scaledVid[camID]->imageData,scaledVid[camID]->imageSize,exposure);
+            cvWriteFrame(writer, scaledVid[camID]);
+            cvReleaseImage(&scaledVid[camID]);     //free the memory allocated to image captu
+        }
+        else
+        {
+        ASIGetVideoData(camID,(unsigned char*)capture[camID]->imageData,capture[camID]->imageSize,exposure);
+        cvWriteFrame(writer, capture[camID]);
+        keepVid = cvWaitKey(1);
+
+        }
+
+    }
+    cvReleaseVideoWriter(&writer);
 }

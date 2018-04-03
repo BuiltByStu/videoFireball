@@ -47,3 +47,12 @@ void printConfig(Config& Config1);
 
 //Preview video feed from cameras-converts to 8 bit for preview
 void previewVideo(IplImage* capture[6], int numCams, int exposure);
+
+//menu for selecting program mode
+int modeSelectMenu ();
+
+//Take a still photograph
+void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo);
+
+//Record video
+void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime);
