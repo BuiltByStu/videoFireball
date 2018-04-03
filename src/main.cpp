@@ -213,18 +213,19 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
 
         for(int camID = 0; camID < numCams; camID++)
         {
+            sprintf(cameraName, "Camera%d",camID);
+            cvNamedWindow(cameraName, camID);
+            cvResizeWindow(cameraName, HORIRES/3,VERTRES/2.5);
+            //tile up to 6 windows on screen
+            if(camID < 3)
+                cvMoveWindow(cameraName, camID*HORIRES/3, 0);
+            else
+                cvMoveWindow(cameraName, (camID-3)*HORIRES/3, VERTRES/2);
+
             if(capture[camID]->depth == 16)
             {
-                sprintf(cameraName, "Camera%d",camID);
-                cvNamedWindow(cameraName, camID);
-                cvResizeWindow(cameraName, HORIRES/3,VERTRES/2.5);
-                //tile up to 6 windows on screen
-                if(camID < 3)
-                    cvMoveWindow(cameraName, camID*HORIRES/3, 0);
-                else
-                    cvMoveWindow(cameraName, (camID-3)*HORIRES/3, VERTRES/2);
-
                //needs to be scaled to 8 bit to be displayed corectly
+
                 IplImage * scaledVid[6];
                 scaledVid[camID] = cvCreateImage(cvGetSize(capture[camID]),8,1);
                 cvConvertScale(capture[camID],scaledVid[camID],1.0/256) ;
@@ -341,7 +342,6 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
         keepVid = cvWaitKey(1);
 
         }
-
     }
     cvReleaseVideoWriter(&writer);
 }
