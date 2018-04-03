@@ -20,7 +20,10 @@ Description:Sources configuration files and assesses connected cameras
 
 using namespace std;
 
+//Replace this with in program menu or something
 #define PREVIEWVIDEO 1 //video preview on =1, off =0
+#define HORIRES 1920
+#define VERTRES 1080
 
 int main(int argc, char* argv[])
 {
@@ -191,19 +194,35 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
 
     while(keepVid!=27)
     {
+
         for(int camID = 0; camID < numCams; camID++)
         {
-            sprintf(cameraName, "Camera%d",camID);
-            cvNamedWindow(cameraName, camID);
+            if(capture[camID]->depth == 16)
+            {
+                sprintf(cameraName, "Camera%d",camID);
+                cvNamedWindow(cameraName, camID);
+                cvResizeWindow(cameraName, HORIRES/3,VERTRES/2.5);
+                //tile up to 6 windows on screen
+                if(camID < 3)
+                    cvMoveWindow(cameraName, camID*HORIRES/3, 0);
+                else
+                    cvMoveWindow(cameraName, (camID-3)*HORIRES/3, VERTRES/2);
 
-            //needs to be scaled to 8 bit to be displayed corectly
-            IplImage * scaledVid[6];
-            scaledVid[camID] = cvCreateImage(cvGetSize(capture[camID]),8,1);
-            cvConvertScale(capture[camID],scaledVid[camID],1.0/256) ;
+               //needs to be scaled to 8 bit to be displayed corectly
+                IplImage * scaledVid[6];
+                scaledVid[camID] = cvCreateImage(cvGetSize(capture[camID]),8,1);
+                cvConvertScale(capture[camID],scaledVid[camID],1.0/256) ;
 
-            ASIGetVideoData(camID,(unsigned char*)scaledVid[camID]->imageData,scaledVid[camID]->imageSize,exposure);
-            cvShowImage(cameraName, scaledVid[camID]);
-            cvReleaseImage(&scaledVid[camID]);     //free the memory allocated to image capture
+                ASIGetVideoData(camID,(unsigned char*)scaledVid[camID]->imageData,scaledVid[camID]->imageSize,exposure);
+                cvShowImage(cameraName, scaledVid[camID]);
+                cvReleaseImage(&scaledVid[camID]);     //free the memory allocated to image capture
+            }
+            else
+            {
+                ASIGetVideoData(camID,(unsigned char*)capture[camID]->imageData,capture[camID]->imageSize,exposure);
+                cvShowImage(cameraName, capture[camID]);
+            }
+
         }
         keepVid = cvWaitKey(1);
     }
