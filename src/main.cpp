@@ -17,6 +17,7 @@ Description:Sources configuration files and assesses connected cameras
 #include <sys/time.h>
 #include <ctime>
 #include <unistd.h>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
@@ -33,6 +34,16 @@ int main(int argc, char* argv[])
 	Config Config1;	//decleare config class
 	ASI_CAMERA_INFO CamInfo;
 	IplImage* capture[6];
+
+	//check that save directory is valid
+	if(argc == 2)
+	{
+        if (!boost::filesystem::is_directory(argv[1]))
+        {
+            cout << argv[1] <<" is no a valid directory\n";
+            return -1;
+        }
+	}
 
 	numCams = cameraDetect();
 	if(!numCams)
@@ -67,7 +78,7 @@ int main(int argc, char* argv[])
 		ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
 		(camID,ASI_BANDWIDTHOVERLOAD, 100, ASI_FALSE);
 		//Allow 100% usb bandwidth
-		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 0, ASI_FALSE);
+		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 1, ASI_FALSE);
 
         ASIGetCameraProperty(&CamInfo, camID);
         capture[camID] = cvCreateImage(cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight), 8, 1);
@@ -91,7 +102,7 @@ int main(int argc, char* argv[])
                 takePhoto(capture, numCams, Config1.Exposure, CamInfo);
                 break;
             case 3 :
-                recordVideo(capture, numCams, Config1.Exposure, CamInfo, 5);
+                recordDuration(capture, numCams, Config1.Exposure, CamInfo);
                 break;
             default :
                 cout << "Invalid mode, please select again:\n";
@@ -205,13 +216,14 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
 {
     char keepVid = 0;
     char cameraName[8];
+    int camID = 0;
 
     cout << "Press ESC to exit video preview\n";
 
     while(keepVid!=27)
     {
 
-        for(int camID = 0; camID < numCams; camID++)
+        for(camID = 0; camID < numCams; camID++)
         {
             sprintf(cameraName, "Camera%d",camID);
             cvNamedWindow(cameraName, camID);
@@ -283,15 +295,13 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     unsigned char* imgBuf = new unsigned char[imgSize];
 
     ASIStartExposure(camID,ASI_TRUE);//starts exposure
-    usleep(exposure*1000);//10ms
+    usleep(10000);//10ms
 
-    ASIStopExposure(camID);
-
-    /*while(status = ASI_EXP_WORKING)
+    while(status = ASI_EXP_WORKING)
     {
         ASIGetExpStatus(camID, &status);
         cout << "stuck in here\n";
-    }*/
+    }
 
     if(status == ASI_EXP_SUCCESS)
     {
@@ -309,22 +319,29 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
 
 void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime)
 {
-
     CvVideoWriter* writer;
 
     int camID = 0;
     char keepVid = 0;
+    string fileName;
+
+    cout << "Enter file name\n";
+    cin >> fileName;
+    fileName += ".avi";
 
     if(capture[camID]->depth == 16)
-        writer = cvCreateVideoWriter("testVid.avi",CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+        writer = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
     else
-        writer = cvCreateVideoWriter("testVid.avi",CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+        writer = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
 
     clock_t startTime;
     startTime = clock();
 
+    cout << "recording " << recTime << " second video..please wait\n";
+
     while(recTime >= (clock()-startTime)/CLOCKS_PER_SEC)
     {
+
         if(capture[camID]->depth == 16)
         {
             IplImage * scaledVid[6];
@@ -343,5 +360,15 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
 
         }
     }
+    cout << "Recording complete\n";
     cvReleaseVideoWriter(&writer);
+}
+
+void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo)
+{
+    int duration = 0;
+    cout << "Record duration:\n";
+    cin >> duration;
+
+    recordVideo(capture, numCams, exposure, CamInfo, duration);
 }
