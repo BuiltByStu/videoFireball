@@ -83,8 +83,6 @@ int main(int argc, char* argv[])
         ASIGetCameraProperty(&CamInfo, camID);
         capture[camID] = cvCreateImage(cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight), 8, 1);
         //Set size to max resolution, 16=bit depth, 1=channels
-
-        ASIStartVideoCapture(camID);
 	}
 
 	while (mode != -1)
@@ -115,8 +113,7 @@ int main(int argc, char* argv[])
 
 	for(camID = 0; camID < numCams; camID++)
     {
-        ASIStopVideoCapture(camID);
-        ASICloseCamera(camID);
+        ASICloseCamera(camID); //This needs to be last
         cvReleaseImage(&capture[camID]);     //free the memory allocated to image capture
     }
 
@@ -222,6 +219,10 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
     char cameraName[8];
     int camID = 0;
 
+    for(camID = 0; camID < numCams; camID++)
+        ASIStartVideoCapture(camID);
+
+
     cout << "Press ESC to exit video preview\n";
 
     while(keepVid!=27)
@@ -261,6 +262,9 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
     }
     //close all and free memory
     cvDestroyAllWindows();
+
+    for(camID = 0; camID < numCams; camID++)
+        ASIStopVideoCapture(camID);
 }
 
 int modeSelectMenu ()
@@ -284,6 +288,7 @@ int modeSelectMenu ()
 
 void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo)
 {
+
     //This function doe not work yet
 
     int camID = 0; //loop this once working with one camera
@@ -299,13 +304,12 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     unsigned char* imgBuf = new unsigned char[imgSize];
 
     ASIStartExposure(camID,ASI_TRUE);//starts exposure
-    usleep(10000);//10ms
 
-    while(status = ASI_EXP_WORKING)
+    while(status == ASI_EXP_WORKING)
     {
         ASIGetExpStatus(camID, &status);
-        cout << "stuck in here\n";
     }
+
 
     if(status == ASI_EXP_SUCCESS)
     {
@@ -318,7 +322,10 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     }
 
     ASIStopExposure(camID);
+
     delete[] imgBuf;
+
+
 }
 
 void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime, char* directory)
@@ -329,9 +336,13 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     char keepVid = 0;
     string fileName;
 
+    //for(camID = 0; camID < numCams; camID++)
+        ASIStartVideoCapture(camID);
+
     cout << "Enter file name\n";
     cin >> fileName;
     fileName += ".avi";
+    //set directory in file name if given
     if(directory != 0)
         fileName = directory + fileName;
 
@@ -368,6 +379,9 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     }
     cout << "Recording complete\n";
     cvReleaseVideoWriter(&writer);
+
+    for(camID = 0; camID < numCams; camID++)
+        ASIStopVideoCapture(camID);
 }
 
 void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory)
