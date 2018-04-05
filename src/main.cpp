@@ -17,6 +17,7 @@ Description:Sources configuration files and assesses connected cameras
 #include <sys/time.h>
 #include <ctime>
 #include <unistd.h>
+#include <string>
 #include <boost/filesystem.hpp>
 
 using namespace std;
@@ -256,7 +257,6 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
                 ASIGetVideoData(camID,(unsigned char*)capture[camID]->imageData,capture[camID]->imageSize,exposure);
                 cvShowImage(cameraName, capture[camID]);
             }
-
         }
         keepVid = cvWaitKey(1);
     }
@@ -288,11 +288,11 @@ int modeSelectMenu ()
 
 void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo)
 {
-
-    //This function doe not work yet
-
     int camID = 0; //loop this once working with one camera
-    ASI_EXPOSURE_STATUS status = ASI_EXP_WORKING;
+    ASI_EXPOSURE_STATUS status[6];
+    string photoName = "test";
+    string fileName;
+    char tempCamID;
 
     long imgSize;
 
@@ -301,29 +301,50 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     else
         imgSize = CamInfo.MaxWidth*CamInfo.MaxHeight; //+1 for 16 bit
 
-    unsigned char* imgBuf = new unsigned char[imgSize];
 
-    ASIStartExposure(camID,ASI_TRUE);//starts exposure
+    unsigned char* imgBuf[6];
 
-    while(status == ASI_EXP_WORKING)
+    for(camID = 0; camID < numCams; camID++)
     {
-        ASIGetExpStatus(camID, &status);
+        status[camID] = ASI_EXP_WORKING;
+        imgBuf[camID] = new unsigned char[imgSize];
+        ASIStartExposure(camID,ASI_TRUE);//starts exposure
     }
 
+    int statusCheck  = 0;
 
-    if(status == ASI_EXP_SUCCESS)
+    while(statusCheck < numCams)
     {
-        ASIGetDataAfterExp(camID,imgBuf,imgSize);
-        cvSaveImage("testImage.jpg", capture[camID]);
+        for(camID = 0; camID < numCams; camID++)
+        {
+            ASIGetExpStatus(camID, &status[camID]);
+
+            if(status[camID] != ASI_EXP_WORKING)
+                statusCheck ++;
+            if(statusCheck < numCams)
+                statusCheck = 0;
+        }
     }
-    else
+
+    for(camID = 0; camID < numCams; camID++)
     {
-        cout << "Failed to capture\n";
+        if(status[camID] == ASI_EXP_SUCCESS)
+        {
+            ASIGetDataAfterExp(camID,imgBuf[camID],imgSize);
+            tempCamID = '0' + camID;
+            fileName = photoName + "cam" + tempCamID + ".jpg";
+            cout << fileName << endl;
+            cvSaveImage(fileName.c_str(), capture[camID]);
+            cout << "Good Capture camera " << camID << endl;
+        }
+        else
+        {
+            cout << "Failed to capture camera " << camID <<endl;
+        }
+
+        ASIStopExposure(camID);
+        delete[] imgBuf[camID];
     }
-
-    ASIStopExposure(camID);
-
-    delete[] imgBuf;
 
 
 }
@@ -335,9 +356,8 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     int camID = 0;
     char keepVid = 0;
     string fileName;
-
     //for(camID = 0; camID < numCams; camID++)
-        ASIStartVideoCapture(camID);
+    ASIStartVideoCapture(camID);
 
     cout << "Enter file name\n";
     cin >> fileName;
