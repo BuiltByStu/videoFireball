@@ -52,7 +52,7 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure);
 int modeSelectMenu ();
 
 //Take a still photograph
-void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo);
+void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory);
 
 //Record video
 void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime, char* directory);

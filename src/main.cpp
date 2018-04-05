@@ -22,8 +22,7 @@ Description:Sources configuration files and assesses connected cameras
 
 using namespace std;
 
-//Replace this with in program menu or something
-#define PREVIEWVIDEO 1 //video preview on =1, off =0
+//Screen resolution-find better way to get this
 #define HORIRES 1920
 #define VERTRES 1080
 
@@ -35,6 +34,7 @@ int main(int argc, char* argv[])
 	Config Config1;	//decleare config class
 	ASI_CAMERA_INFO CamInfo;
 	IplImage* capture[6];
+	char* directory;
 
 	//check that save directory is valid
 	if(argc == 2)
@@ -44,7 +44,12 @@ int main(int argc, char* argv[])
             cout << argv[1] <<" is no a valid directory\n";
             return -1;
         }
+        else
+            directory = argv[1];
 	}
+	else
+        directory = 0;
+
 
 	numCams = cameraDetect();
 	if(!numCams)
@@ -98,14 +103,10 @@ int main(int argc, char* argv[])
                 previewVideo(capture, numCams, Config1.Exposure);
                 break;
             case 2 :
-                takePhoto(capture, numCams, Config1.Exposure, CamInfo);
+                takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
                 break;
             case 3 :
-                if(argc == 2)
-                    recordDuration(capture, numCams, Config1.Exposure, CamInfo, argv[1]);
-                else
-                    recordDuration(capture, numCams, Config1.Exposure, CamInfo, 0);
-
+                recordDuration(capture, numCams, Config1.Exposure, CamInfo, directory);
                 break;
             default :
                 cout << "Invalid mode, please select again:\n";
@@ -243,7 +244,6 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
             if(capture[camID]->depth == 16)
             {
                //needs to be scaled to 8 bit to be displayed corectly
-
                 IplImage * scaledVid[6];
                 scaledVid[camID] = cvCreateImage(cvGetSize(capture[camID]),8,1);
                 cvConvertScale(capture[camID],scaledVid[camID],1.0/256) ;
@@ -286,14 +286,13 @@ int modeSelectMenu ()
     return mode;
 }
 
-void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo)
+void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory)
 {
     int camID = 0; //loop this once working with one camera
     ASI_EXPOSURE_STATUS status[6];
-    string photoName = "test";
+    string photoName = "test"; // make this from time and sate
     string fileName;
     char tempCamID;
-
     long imgSize;
 
     if(capture[camID]->depth == 16)
@@ -301,6 +300,8 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     else
         imgSize = CamInfo.MaxWidth*CamInfo.MaxHeight; //+1 for 16 bit
 
+    if(directory != 0)
+        photoName = directory + fileName;
 
     unsigned char* imgBuf[6];
 
@@ -345,8 +346,6 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
         ASIStopExposure(camID);
         delete[] imgBuf[camID];
     }
-
-
 }
 
 void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime, char* directory)
@@ -355,13 +354,15 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
 
     int camID = 0;
     char keepVid = 0;
+    string videoName = "testVid";
     string fileName;
+    char tempCamID;
+
     //for(camID = 0; camID < numCams; camID++)
     ASIStartVideoCapture(camID);
 
-    cout << "Enter file name\n";
-    cin >> fileName;
-    fileName += ".avi";
+    tempCamID = '0' + camID;
+    fileName = videoName + "Cam" + tempCamID + ".avi";
     //set directory in file name if given
     if(directory != 0)
         fileName = directory + fileName;
