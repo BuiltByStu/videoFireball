@@ -102,7 +102,11 @@ int main(int argc, char* argv[])
                 takePhoto(capture, numCams, Config1.Exposure, CamInfo);
                 break;
             case 3 :
-                recordDuration(capture, numCams, Config1.Exposure, CamInfo);
+                if(argc == 2)
+                    recordDuration(capture, numCams, Config1.Exposure, CamInfo, argv[1]);
+                else
+                    recordDuration(capture, numCams, Config1.Exposure, CamInfo, 0);
+
                 break;
             default :
                 cout << "Invalid mode, please select again:\n";
@@ -317,7 +321,7 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     delete[] imgBuf;
 }
 
-void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime)
+void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime, char* directory)
 {
     CvVideoWriter* writer;
 
@@ -328,6 +332,8 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     cout << "Enter file name\n";
     cin >> fileName;
     fileName += ".avi";
+    if(directory != 0)
+        fileName = directory + fileName;
 
     if(capture[camID]->depth == 16)
         writer = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
@@ -364,11 +370,11 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     cvReleaseVideoWriter(&writer);
 }
 
-void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo)
+void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory)
 {
     int duration = 0;
     cout << "Record duration:\n";
     cin >> duration;
 
-    recordVideo(capture, numCams, exposure, CamInfo, duration);
+    recordVideo(capture, numCams, exposure, CamInfo, duration, directory);
 }
