@@ -1,7 +1,7 @@
 OPENCV = -lopencv_core -lopencv_highgui -lopencv_imgproc
 BOOST = -lboost_filesystem -lboost_system
 
-CFLAGS = -g -m64 -lrt -fsanitize=address -fno-omit-frame-pointer
+CFLAGS = -std=c++11 -g -m64 -lrt -fsanitize=address -fno-omit-frame-pointer
 # -m64: generate code for 64 bit environment
 # -lrt link with libraries
 

@@ -11,7 +11,7 @@ Description:Sources configuration files and assesses connected cameras
 #include "opencv2/core/core.hpp"
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
-#include "main.h"
+#include "main.hpp"
 #include <iostream>
 #include <fstream>
 #include <sys/time.h>
@@ -290,7 +290,7 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
 {
     int camID = 0; //loop this once working with one camera
     ASI_EXPOSURE_STATUS status[numCams];
-    string photoName = "test"; // make this from time and sate
+    string photoName;
     string fileName;
     char tempCamID;
     long imgSize;
@@ -304,6 +304,8 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
         photoName = directory + fileName;
 
     unsigned char* imgBuf[numCams];
+
+    photoName = timeStamp();
 
     for(camID = 0; camID < numCams; camID++)
     {
@@ -354,19 +356,19 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
 
     int camID = 0;
     char keepVid = 0;
-    string videoName = "testVid";
+    string videoName;
     string fileName;
     char tempCamID;
     clock_t startTime;
 
-
+    videoName = timeStamp();
     for(camID = 0; camID < numCams; camID++)
     {
         ASIStartVideoCapture(camID);
 
         //make name for file
         tempCamID = '0' + camID;
-        fileName = videoName + "Cam" + tempCamID + ".avi";
+        fileName = videoName + "cam" + tempCamID + ".avi";
         if(directory != 0)     //set directory in file name if given
             fileName = directory + fileName;
 
@@ -376,9 +378,10 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
             writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
     }
 
+    cout << "recording " << recTime << " second video..please wait\n";
+
     //set start time
     startTime = clock();
-    cout << "recording " << recTime << " second video..please wait\n";
 
     while(recTime >= (clock()-startTime)/CLOCKS_PER_SEC)
     {
@@ -419,4 +422,45 @@ void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_
     cin >> duration;
 
     recordVideo(capture, numCams, exposure, CamInfo, duration, directory);
+}
+
+std::string timeStamp()
+{
+    //This works but can be minimised
+    string currentDateTime;
+    string year, month, day, hour, mins, secs;
+
+    time_t setTime = time(0);
+    tm* getTime = localtime(&setTime);
+
+    year = to_string(getTime->tm_year + 1900);
+
+    if(getTime->tm_mon+1 < 10)
+        month = '0' + to_string(getTime->tm_mon+1);
+    else
+        month = to_string(getTime->tm_mon+1);
+
+    if(getTime->tm_mday < 10)
+        day = '0' + to_string(getTime->tm_mday);
+    else
+        day = to_string(getTime->tm_mday);
+
+    if(getTime->tm_hour < 10)
+        hour = '0' + to_string(getTime->tm_hour);
+    else
+        hour = to_string(getTime->tm_hour);
+
+    if(getTime->tm_min < 10)
+        mins = '0' + to_string(getTime->tm_min);
+    else
+        mins = to_string(getTime->tm_min);
+
+    if(getTime->tm_sec < 10)
+        secs = '0' + to_string(getTime->tm_sec);
+    else
+        secs = to_string(getTime->tm_sec);
+
+    currentDateTime = year + month + day + hour + mins + secs;
+
+    return currentDateTime;
 }

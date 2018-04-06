@@ -59,3 +59,6 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
 
 //Records video of input duration
 void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory);
+
+//Returns the current date and time in the form year-month-day-hour-min-sec
+std::string timeStamp();
