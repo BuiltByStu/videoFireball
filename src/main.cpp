@@ -289,7 +289,7 @@ int modeSelectMenu ()
 void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory)
 {
     int camID = 0; //loop this once working with one camera
-    ASI_EXPOSURE_STATUS status[6];
+    ASI_EXPOSURE_STATUS status[numCams];
     string photoName = "test"; // make this from time and sate
     string fileName;
     char tempCamID;
@@ -303,7 +303,7 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     if(directory != 0)
         photoName = directory + fileName;
 
-    unsigned char* imgBuf[6];
+    unsigned char* imgBuf[numCams];
 
     for(camID = 0; camID < numCams; camID++)
     {
@@ -350,59 +350,66 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
 
 void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime, char* directory)
 {
-    CvVideoWriter* writer;
+    CvVideoWriter* writer[numCams];
 
     int camID = 0;
     char keepVid = 0;
     string videoName = "testVid";
     string fileName;
     char tempCamID;
-
-    //for(camID = 0; camID < numCams; camID++)
-    ASIStartVideoCapture(camID);
-
-    tempCamID = '0' + camID;
-    fileName = videoName + "Cam" + tempCamID + ".avi";
-    //set directory in file name if given
-    if(directory != 0)
-        fileName = directory + fileName;
-
-    if(capture[camID]->depth == 16)
-        writer = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
-    else
-        writer = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
-
     clock_t startTime;
-    startTime = clock();
 
+
+    for(camID = 0; camID < numCams; camID++)
+    {
+        ASIStartVideoCapture(camID);
+
+        //make name for file
+        tempCamID = '0' + camID;
+        fileName = videoName + "Cam" + tempCamID + ".avi";
+        if(directory != 0)     //set directory in file name if given
+            fileName = directory + fileName;
+
+        if(capture[camID]->depth == 16)
+            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+        else
+            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+    }
+
+    //set start time
+    startTime = clock();
     cout << "recording " << recTime << " second video..please wait\n";
 
     while(recTime >= (clock()-startTime)/CLOCKS_PER_SEC)
     {
-
-        if(capture[camID]->depth == 16)
+        for(camID = 0; camID < numCams; camID++)
         {
-            IplImage * scaledVid[6];
-            scaledVid[camID] = cvCreateImage(cvGetSize(capture[camID]),8,1);
-            cvConvertScale(capture[camID],scaledVid[camID],1.0/256) ;
+            if(capture[camID]->depth == 16)
+            {
+                IplImage * scaledVid;
+                scaledVid = cvCreateImage(cvGetSize(capture[camID]),8,1);
+                cvConvertScale(capture[camID],scaledVid,1.0/256) ;
 
-            ASIGetVideoData(camID,(unsigned char*)scaledVid[camID]->imageData,scaledVid[camID]->imageSize,exposure);
-            cvWriteFrame(writer, scaledVid[camID]);
-            cvReleaseImage(&scaledVid[camID]);     //free the memory allocated to image captu
-        }
-        else
-        {
-        ASIGetVideoData(camID,(unsigned char*)capture[camID]->imageData,capture[camID]->imageSize,exposure);
-        cvWriteFrame(writer, capture[camID]);
-        keepVid = cvWaitKey(1);
-
+                ASIGetVideoData(camID,(unsigned char*)scaledVid->imageData,scaledVid->imageSize,exposure);
+                cvWriteFrame(writer[camID], scaledVid);
+                cvReleaseImage(&scaledVid);     //free the memory allocated to image captu
+            }
+            else
+            {
+            ASIGetVideoData(camID,(unsigned char*)capture[camID]->imageData,capture[camID]->imageSize,exposure);
+            cvWriteFrame(writer[camID], capture[camID]);
+            keepVid = cvWaitKey(1);
+            }
         }
     }
     cout << "Recording complete\n";
-    cvReleaseVideoWriter(&writer);
 
     for(camID = 0; camID < numCams; camID++)
+    {
+        cvReleaseVideoWriter(&writer[camID]);
         ASIStopVideoCapture(camID);
+    }
+
 }
 
 void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory)
