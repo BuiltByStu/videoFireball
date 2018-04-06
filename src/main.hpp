@@ -49,16 +49,16 @@ void printConfig(Config& Config1);
 void previewVideo(IplImage* capture[6], int numCams, int exposure);
 
 //menu for selecting program mode
-int modeSelectMenu ();
+void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
 
 //Take a still photograph
-void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory);
+void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory);
 
 //Record video
-void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime, char* directory);
+void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], int recTime, char* directory);
 
 //Records video of input duration
-void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory);
+void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory);
 
 //Returns the current date and time in the form year-month-day-hour-min-sec
 std::string timeStamp();

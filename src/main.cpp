@@ -30,9 +30,8 @@ int main(int argc, char* argv[])
 {
 	int numCams = 0; //number of connected cameras
 	int camID = 0; //which camera is being read (0-5)
-	int mode = 0; //Selects the functionality of the program
 	Config Config1;	//decleare config class
-	ASI_CAMERA_INFO CamInfo;
+	ASI_CAMERA_INFO CamInfo[6];
 	IplImage* capture[6];
 	char* directory;
 
@@ -70,13 +69,13 @@ int main(int argc, char* argv[])
 	//check status (and properties) of cameras
 	for(camID = 0; camID < numCams; camID++)
 	{
-		if(cameraCheck(CamInfo, camID))
+		if(cameraCheck(CamInfo[camID], camID))
 		{
 			cout << "Unable to access camera" << camID << " check that permissions have been set for camera\n";
 			return -1;
 		}
 
-		printCameraProperties(CamInfo, camID);	//print properties of the camera
+		printCameraProperties(CamInfo[camID], camID);	//print properties of the camera
 
 		//set camera settings
 		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
@@ -86,32 +85,12 @@ int main(int argc, char* argv[])
 		//Allow 100% usb bandwidth
 		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 1, ASI_FALSE);
 
-        ASIGetCameraProperty(&CamInfo, camID);
-        capture[camID] = cvCreateImage(cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight), 8, 1);
+        ASIGetCameraProperty(&CamInfo[camID], camID);
+        capture[camID] = cvCreateImage(cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight), 8, 1);
         //Set size to max resolution, 16=bit depth, 1=channels
 	}
 
-	while (mode != -1)
-	{
-		mode = modeSelectMenu();
-
-        switch(mode){
-            case -1:
-                cout << "exiting....\n";
-                break;
-            case 1 :
-                previewVideo(capture, numCams, Config1.Exposure);
-                break;
-            case 2 :
-                takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
-                break;
-            case 3 :
-                recordDuration(capture, numCams, Config1.Exposure, CamInfo, directory);
-                break;
-            default :
-                cout << "Invalid mode, please select again:\n";
-        }
-	}
+	modeSelectMenu(capture, numCams, Config1, CamInfo, directory);
 
 	for(camID = 0; camID < numCams; camID++)
     {
@@ -267,26 +246,44 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
         ASIStopVideoCapture(camID);
 }
 
-int modeSelectMenu ()
+void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
 {
     char modeRead;
-    int mode = 0;
+    int mode = 0; //Selects the functionality of the program
 
-    cout << "select mode:\n";
-    cout << "1\tVideo preview\n";
-    cout << "2\tCapture image\n";
-    cout << "3\tRecord video\n";
-    cout << "\n0\tEXIT\n";
-    cin >> modeRead;
-    mode = modeRead - '0';
+	while (mode != -1)
+	{
+        cout << "select mode:\n";
+        cout << "1\tVideo preview\n";
+        cout << "2\tCapture image\n";
+        cout << "3\tRecord video\n";
+        cout << "\n0\tEXIT\n";
+        cin >> modeRead;
+        mode = modeRead - '0';
 
-    if(mode == 0)
-        mode = -1;
+        if(mode == 0)
+            mode = -1;
 
-    return mode;
+        switch(mode){
+            case -1:
+                cout << "exiting....\n";
+                break;
+            case 1 :
+                previewVideo(capture, numCams, Config1.Exposure);
+                break;
+            case 2 :
+                takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
+                break;
+            case 3 :
+                recordDuration(capture, numCams, Config1.Exposure, CamInfo, directory);
+                break;
+            default :
+                cout << "Invalid mode, please select again:\n";
+        }
+	}
 }
 
-void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory)
+void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory)
 {
     int camID = 0; //loop this once working with one camera
     ASI_EXPOSURE_STATUS status[numCams];
@@ -296,9 +293,9 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     long imgSize;
 
     if(capture[camID]->depth == 16)
-        imgSize = CamInfo.MaxWidth*CamInfo.MaxHeight*2; //+1 for 16 bit
+        imgSize = CamInfo[0].MaxWidth*CamInfo[0].MaxHeight*2; //+1 for 16 bit
     else
-        imgSize = CamInfo.MaxWidth*CamInfo.MaxHeight; //+1 for 16 bit
+        imgSize = CamInfo[0].MaxWidth*CamInfo[0].MaxHeight; //+1 for 16 bit
 
     if(directory != 0)
         photoName = directory + fileName;
@@ -350,7 +347,7 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     }
 }
 
-void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, int recTime, char* directory)
+void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], int recTime, char* directory)
 {
     CvVideoWriter* writer[numCams];
 
@@ -373,9 +370,9 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
             fileName = directory + fileName;
 
         if(capture[camID]->depth == 16)
-            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),0);
         else
-            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo.MaxWidth,CamInfo.MaxHeight),0);
+            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),0);
     }
 
     cout << "recording " << recTime << " second video..please wait\n";
@@ -415,7 +412,7 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
 
 }
 
-void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo, char* directory)
+void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory)
 {
     int duration = 0;
     cout << "Record duration:\n";
@@ -464,3 +461,4 @@ std::string timeStamp()
 
     return currentDateTime;
 }
+
