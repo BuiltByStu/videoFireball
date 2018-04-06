@@ -1,5 +1,6 @@
 Exposure 5
 Gain 250
 Gamma 50
-Bandwidth 5
-HS_Mode 6
+Interval 20
+Iterations 4
+VideoDuration 10

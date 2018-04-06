@@ -19,8 +19,9 @@ class Config {
         int Exposure;
 		int Gain;
 		int Gamma;
-		int Bandwidth;
-		int HS_Mode;
+		int Interval;
+        int Iterations;
+        int VideoDuration;
 };
 
 //function declarations
@@ -62,3 +63,11 @@ void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_
 
 //Returns the current date and time in the form year-month-day-hour-min-sec
 std::string timeStamp();
+
+void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
+
+//Autonomous video mode
+void autoVideo(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
+
+//Autonomous photo mode
+void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);

@@ -20,6 +20,7 @@ Description:Sources configuration files and assesses connected cameras
 #include <string>
 #include <boost/filesystem.hpp>
 
+
 using namespace std;
 
 //Screen resolution-find better way to get this
@@ -36,7 +37,7 @@ int main(int argc, char* argv[])
 	char* directory;
 
 	//check that save directory is valid
-	if(argc == 2)
+	if(argc >= 2)
 	{
         if (!boost::filesystem::is_directory(argv[1]))
         {
@@ -81,7 +82,7 @@ int main(int argc, char* argv[])
 		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
 		//set exposure from config class, ASI_FALSE = not auto exposure
 		ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
-		(camID,ASI_BANDWIDTHOVERLOAD, 100, ASI_FALSE);
+		ASISetControlValue(camID,ASI_BANDWIDTHOVERLOAD, 100, ASI_FALSE);
 		//Allow 100% usb bandwidth
 		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 1, ASI_FALSE);
 
@@ -125,7 +126,7 @@ int cameraDetect()
 
 int readConfiguration(Config& Config1)
 {
-	int reading[] = {0, 0, 0, 0, 0, 0, 0}; //int array for holding read from config file
+	int reading[] = {0, 0, 0, 0, 0, 0}; //int array for holding read from config file
 	int readCheck = 0;
 
 	string configLine_;
@@ -139,7 +140,7 @@ int readConfiguration(Config& Config1)
 		//Read from the configFile
 
 		int i = 0;
-		while(configFile_ >> camParam >> camVal && i<5)
+		while(configFile_ >> camParam >> camVal && i<6)
 		{
 	 	   reading[i] = camVal;
 			i++;
@@ -149,8 +150,9 @@ int readConfiguration(Config& Config1)
 		Config1.Exposure = reading[0];
 		Config1.Gain = reading[1];
 		Config1.Gamma = reading[2];
-		Config1.Bandwidth = reading [3];
-		Config1.HS_Mode = reading [4];
+		Config1.Interval = reading [3];
+		Config1.Iterations = reading [4];
+		Config1.VideoDuration = reading [5];
 
 		readCheck = 1;
 	}
@@ -190,8 +192,9 @@ void printConfig(Config& Config1)
 	cout << "\tExposure (ms)=\t" << Config1.Exposure << endl;
 	cout << "\tGain=\t\t" << Config1.Gain << endl;
 	cout << "\tGamma=\t\t" << Config1.Gamma << endl;
-	cout << "\tBancdwidth=\t" << Config1.Bandwidth << endl;
-	cout << "\tHighSpeedMode=\t" << Config1.HS_Mode << endl;
+	cout << "\tInterval(s)=\t" << Config1.Interval << endl;
+	cout << "\tIterations=\t" << Config1.Iterations << endl;
+	cout << "\tVid lentgh(s)=\t" << Config1.VideoDuration << endl;
 }
 
 void previewVideo(IplImage* capture[6], int numCams, int exposure)
@@ -257,6 +260,7 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
         cout << "1\tVideo preview\n";
         cout << "2\tCapture image\n";
         cout << "3\tRecord video\n";
+        cout << "4\tTimed capture\n";
         cout << "\n0\tEXIT\n";
         cin >> modeRead;
         mode = modeRead - '0';
@@ -276,6 +280,9 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
                 break;
             case 3 :
                 recordDuration(capture, numCams, Config1.Exposure, CamInfo, directory);
+                break;
+            case 4 :
+                timedCapture(capture, numCams, Config1, CamInfo, directory);
                 break;
             default :
                 cout << "Invalid mode, please select again:\n";
@@ -415,10 +422,12 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
 void recordDuration(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory)
 {
     int duration = 0;
-    cout << "Record duration:\n";
+
+    cout << "Enter 0 to exit\nRecord duration:\n";
     cin >> duration;
 
-    recordVideo(capture, numCams, exposure, CamInfo, duration, directory);
+    if(duration)
+        recordVideo(capture, numCams, exposure, CamInfo, duration, directory);
 }
 
 std::string timeStamp()
@@ -460,5 +469,99 @@ std::string timeStamp()
     currentDateTime = year + month + day + hour + mins + secs;
 
     return currentDateTime;
+}
+
+void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
+{
+    int mode = -1; //1=video,2=photo
+    int interval = 0;
+    int iterations = 0;
+    int duration = 0;
+    while(mode < 0 || mode > 2)
+    {
+        cout << "Select capture type:\n";
+        cout << "1\tVideo\n2\tPhoto\n";
+        cout << "\n0\tEXIT\n";
+        cin >> mode;
+    }
+    while(interval == 0 && mode)
+    {
+        cout << "Enter 0 to exit\nEnter how often would you like captures to occur:\n";
+        cin >> interval;
+        if(interval == 0)
+            mode = 0;
+    }
+
+    while(iterations == 0 && mode)
+    {
+        cout << "Enter 0 to exit\nEnter number of iterations:\n";
+        cin >> iterations;
+        if (iterations == 0)
+            mode = 0;
+    }
+
+    if(mode == 1)
+    {
+        while(!duration && mode)
+        {
+            cout << "Enter 0 to exit\nRecord duration:\n";
+            cin >> duration;
+
+            if(duration == 0)
+                mode = 0;
+
+            if(duration && duration >= interval+1)
+            {
+                cout << "record duration must be less than interval between captures\n";
+                duration = 0;
+            }
+        }
+    }
+
+    if(mode)
+    {
+        Config1.Interval = interval;
+        Config1.Iterations = iterations;
+        Config1.VideoDuration = duration;
+
+        switch(mode){
+        case 1 :
+            autoVideo(capture, numCams, Config1, CamInfo, directory);
+            break;
+        case 2 :
+            autoPhoto(capture, numCams, Config1, CamInfo, directory);
+            break;
+        }
+    }
+}
+
+void autoVideo(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
+{
+    clock_t startTime;
+
+    cout << "Auto video mode\n";
+    for(int i = 0; i < Config1.Iterations; i++)
+    {
+        cout << "Starting capture\n";
+        recordVideo(capture, numCams, Config1.Exposure, CamInfo, Config1.VideoDuration, directory);
+        cout << "Waiting until next capture\n";
+
+        startTime = clock();
+        while(Config1.Interval-Config1.VideoDuration-1 >= (clock()-startTime)/CLOCKS_PER_SEC){}
+    }
+}
+
+void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
+{
+    clock_t startTime;
+
+    cout << "Auto photo mode\n";
+       for(int i = 0; i < Config1.Iterations; i++)
+    {
+        takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
+        cout << "Waiting until next capture\n";
+        startTime = clock();
+        while(Config1.Interval-Config1.Exposure/1000-1>= (clock()-startTime)/CLOCKS_PER_SEC){}
+    }
 }
 
