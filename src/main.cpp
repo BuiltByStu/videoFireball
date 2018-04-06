@@ -32,6 +32,7 @@ int main(int argc, char* argv[])
 	int numCams = 0; //number of connected cameras
 	int camID = 0; //which camera is being read (0-5)
 	Config Config1;	//decleare config class
+	int autoMode = 0;
 	ASI_CAMERA_INFO CamInfo[6];
 	IplImage* capture[6];
 	char* directory;
@@ -49,6 +50,12 @@ int main(int argc, char* argv[])
 	}
 	else
         directory = 0;
+
+    if(argc == 3)
+    {
+        if (argv[2] == "auto")
+            autoMode = 1;
+    }
 
 
 	numCams = cameraDetect();
@@ -91,7 +98,10 @@ int main(int argc, char* argv[])
         //Set size to max resolution, 16=bit depth, 1=channels
 	}
 
-	modeSelectMenu(capture, numCams, Config1, CamInfo, directory);
+	if(autoMode)
+        modeSelectMenu(capture, numCams, Config1, CamInfo, directory);
+    else
+        autoVideo(capture, numCams, Config1, CamInfo, directory);
 
 	for(camID = 0; camID < numCams; camID++)
     {
@@ -547,7 +557,8 @@ void autoVideo(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INF
         cout << "Waiting until next capture\n";
 
         startTime = clock();
-        while(Config1.Interval-Config1.VideoDuration-1 >= (clock()-startTime)/CLOCKS_PER_SEC){}
+        if (i == Config1.Iterations-1)
+            while(Config1.Interval-Config1.VideoDuration-1 >= (clock()-startTime)/CLOCKS_PER_SEC){}
     }
 }
 
@@ -561,7 +572,7 @@ void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INF
         takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
         cout << "Waiting until next capture\n";
         startTime = clock();
-        while(Config1.Interval-Config1.Exposure/1000-1>= (clock()-startTime)/CLOCKS_PER_SEC){}
+        if (i == Config1.Iterations-1)
+            while(Config1.Interval-Config1.Exposure/1000-1>= (clock()-startTime)/CLOCKS_PER_SEC){}
     }
 }
-
