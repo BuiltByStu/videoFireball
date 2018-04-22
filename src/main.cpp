@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
         //Set size to max resolution, 16=bit depth, 1=channels
 	}
 
-	if(autoMode)
+	if(!autoMode)
         modeSelectMenu(capture, numCams, Config1, CamInfo, directory);
     else
         autoVideo(capture, numCams, Config1, CamInfo, directory);
