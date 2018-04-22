@@ -11,6 +11,8 @@ Description:Sources configuration files and assesses connected cameras
 #include "opencv2/core/core.hpp"
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/videoio.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include "main.hpp"
 #include <iostream>
 #include <fstream>
@@ -54,7 +56,9 @@ int main(int argc, char* argv[])
     if(argc == 3)
     {
         if (argv[2] == "auto")
+        {
             autoMode = 1;
+        }
     }
 
 
@@ -567,7 +571,7 @@ void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INF
     clock_t startTime;
 
     cout << "Auto photo mode\n";
-       for(int i = 0; i < Config1.Iterations; i++)
+    for(int i = 0; i < Config1.Iterations; i++)
     {
         takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
         cout << "Waiting until next capture\n";
