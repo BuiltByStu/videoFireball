@@ -71,3 +71,6 @@ void autoVideo(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INF
 
 //Autonomous photo mode
 void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
+
+//Lens and camera calibration mode
+//void calibration();

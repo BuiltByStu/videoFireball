@@ -275,6 +275,7 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
         cout << "2\tCapture image\n";
         cout << "3\tRecord video\n";
         cout << "4\tTimed capture\n";
+        //cout << "5\tCalibration\n";
         cout << "\n0\tEXIT\n";
         cin >> modeRead;
         mode = modeRead - '0';
@@ -298,6 +299,8 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
             case 4 :
                 timedCapture(capture, numCams, Config1, CamInfo, directory);
                 break;
+            /*case 5 :
+                calibration();*/
             default :
                 cout << "Invalid mode, please select again:\n";
         }
@@ -580,3 +583,8 @@ void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INF
             while(Config1.Interval-Config1.Exposure/1000-1>= (clock()-startTime)/CLOCKS_PER_SEC){}
     }
 }
+
+/*void calibration()
+{
+    cout << "Calibration mode\n";
+}*/
