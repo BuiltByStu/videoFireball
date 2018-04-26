@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
 		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
 		//set exposure from config class, ASI_FALSE = not auto exposure
 		ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
-		ASISetControlValue(camID,ASI_BANDWIDTHOVERLOAD, 100, ASI_FALSE);
+		ASISetControlValue(camID,ASI_BANDWIDTHOVERLOAD, 90, ASI_FALSE);
 		//Allow 100% usb bandwidth
 		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 1, ASI_FALSE);
 
@@ -216,6 +216,7 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
     char keepVid = 0;
     char cameraName[8];
     int camID = 0;
+    int droppedFrames = 0;
 
     for(camID = 0; camID < numCams; camID++)
         ASIStartVideoCapture(camID);
@@ -260,7 +261,11 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
     cvDestroyAllWindows();
 
     for(camID = 0; camID < numCams; camID++)
+    {
+        ASIGetDroppedFrames(camID, &droppedFrames);
+        cout << "Cam " << camID << " dropped Frames: " << droppedFrames << endl;
         ASIStopVideoCapture(camID);
+    }
 }
 
 void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
@@ -311,6 +316,7 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
 {
     int camID = 0; //loop this once working with one camera
     ASI_EXPOSURE_STATUS status[numCams];
+    IplImage* photos[numCams];
     string photoName;
     string fileName;
     char tempCamID;
@@ -324,14 +330,15 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     if(directory != 0)
         photoName = directory + fileName;
 
-    unsigned char* imgBuf[numCams];
+    //unsigned char* imgBuf[numCams];
 
     photoName = timeStamp();
 
     for(camID = 0; camID < numCams; camID++)
     {
+        photos[camID] = cvCreateImage(cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),8,1);
         status[camID] = ASI_EXP_WORKING;
-        imgBuf[camID] = new unsigned char[imgSize];
+        //imgBuf[camID] = new unsigned char[imgSize];
         ASIStartExposure(camID,ASI_TRUE);//starts exposure
     }
 
@@ -354,20 +361,22 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     {
         if(status[camID] == ASI_EXP_SUCCESS)
         {
-            ASIGetDataAfterExp(camID,imgBuf[camID],imgSize);
+            ASIGetDataAfterExp(camID,(unsigned char*)photos[camID]->imageData,imgSize);
             tempCamID = '0' + camID;
             fileName = photoName + "cam" + tempCamID + ".jpg";
             cout << fileName << endl;
-            cvSaveImage(fileName.c_str(), capture[camID]);
+            cvSaveImage(fileName.c_str(), photos[camID]);
             cout << "Good Capture camera " << camID << endl;
         }
         else
         {
+            ASIStopExposure(camID);
             cout << "Failed to capture camera " << camID <<endl;
         }
+        cvReleaseImage(&photos[camID]);     //free the memory allocated to image capture
 
-        ASIStopExposure(camID);
-        delete[] imgBuf[camID];
+
+        //delete[] imgBuf[camID];
     }
 }
 
@@ -396,7 +405,7 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
         if(capture[camID]->depth == 16)
             writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),0);
         else
-            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 60,cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),0);
+            writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 50,cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),0);
     }
 
     cout << "recording " << recTime << " second video..please wait\n";

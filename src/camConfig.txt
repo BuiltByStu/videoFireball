@@ -1,4 +1,4 @@
-Exposure 5
+Exposure 20
 Gain 250
 Gamma 50
 Interval 20
