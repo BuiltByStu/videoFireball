@@ -216,7 +216,7 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
     char keepVid = 0;
     char cameraName[8];
     int camID = 0;
-    int droppedFrames = 0;
+    //int droppedFrames = 0;
 
     for(camID = 0; camID < numCams; camID++)
         ASIStartVideoCapture(camID);
@@ -262,8 +262,8 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
 
     for(camID = 0; camID < numCams; camID++)
     {
-        ASIGetDroppedFrames(camID, &droppedFrames);
-        cout << "Cam " << camID << " dropped Frames: " << droppedFrames << endl;
+        //ASIGetDroppedFrames(camID, &droppedFrames);
+        //cout << "Cam " << camID << " dropped Frames: " << droppedFrames << endl;
         ASIStopVideoCapture(camID);
     }
 }

@@ -1,5 +1,5 @@
-Exposure 1000	
-Gain 500
+Exposure 5	
+Gain 95
 Gamma 50
 Interval 20
 Iterations 4
