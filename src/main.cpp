@@ -280,7 +280,8 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
         cout << "2\tCapture image\n";
         cout << "3\tRecord video\n";
         cout << "4\tTimed capture\n";
-        //cout << "5\tCalibration\n";
+        cout << "5\tUpdate Config \n";
+        //cout << 6\tCalibration\n";
         cout << "\n0\tEXIT\n";
         cin >> modeRead;
         mode = modeRead - '0';
@@ -304,7 +305,12 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
             case 4 :
                 timedCapture(capture, numCams, Config1, CamInfo, directory);
                 break;
-            /*case 5 :
+            case 5 :
+                if(!readConfiguration(Config1))
+                    cout << "Unable to read camConfig.txt\n";
+                printConfig(Config1);
+                break;
+            /*case 6 :
                 calibration();*/
             default :
                 cout << "Invalid mode, please select again:\n";
