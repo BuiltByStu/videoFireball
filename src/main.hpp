@@ -53,7 +53,7 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure);
 void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
 
 //Take a still photograph
-void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory);
+void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory);
 
 //Record video
 void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], int recTime, char* directory);
@@ -70,7 +70,7 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
 void autoVideo(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
 
 //Autonomous photo mode
-void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
+void autoPhoto(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
 
 //Lens and camera calibration mode
 //void calibration();

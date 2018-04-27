@@ -296,7 +296,7 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
                 previewVideo(capture, numCams, Config1.Exposure);
                 break;
             case 2 :
-                takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
+                takePhoto(numCams, Config1.Exposure, CamInfo, directory);
                 break;
             case 3 :
                 recordDuration(capture, numCams, Config1.Exposure, CamInfo, directory);
@@ -312,7 +312,7 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
 	}
 }
 
-void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory)
+void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* directory)
 {
     int camID = 0; //loop this once working with one camera
     ASI_EXPOSURE_STATUS status[numCams];
@@ -322,15 +322,11 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     char tempCamID;
     long imgSize;
 
-    if(capture[camID]->depth == 16)
-        imgSize = CamInfo[0].MaxWidth*CamInfo[0].MaxHeight*2; //+1 for 16 bit
-    else
-        imgSize = CamInfo[0].MaxWidth*CamInfo[0].MaxHeight; //+1 for 16 bit
+    imgSize = CamInfo[0].MaxWidth*CamInfo[0].MaxHeight*2; //+1 for 16 bit
 
     if(directory != 0)
         photoName = directory + fileName;
 
-    //unsigned char* imgBuf[numCams];
 
     photoName = timeStamp();
 
@@ -338,7 +334,6 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
     {
         photos[camID] = cvCreateImage(cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),8,1);
         status[camID] = ASI_EXP_WORKING;
-        //imgBuf[camID] = new unsigned char[imgSize];
         ASIStartExposure(camID,ASI_TRUE);//starts exposure
     }
 
@@ -374,9 +369,6 @@ void takePhoto(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO 
             cout << "Failed to capture camera " << camID <<endl;
         }
         cvReleaseImage(&photos[camID]);     //free the memory allocated to image capture
-
-
-        //delete[] imgBuf[camID];
     }
 }
 
@@ -555,7 +547,7 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
             autoVideo(capture, numCams, Config1, CamInfo, directory);
             break;
         case 2 :
-            autoPhoto(capture, numCams, Config1, CamInfo, directory);
+            autoPhoto(numCams, Config1, CamInfo, directory);
             break;
         }
     }
@@ -578,14 +570,14 @@ void autoVideo(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INF
     }
 }
 
-void autoPhoto(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
+void autoPhoto(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
 {
     clock_t startTime;
 
     cout << "Auto photo mode\n";
     for(int i = 0; i < Config1.Iterations; i++)
     {
-        takePhoto(capture, numCams, Config1.Exposure, CamInfo, directory);
+        takePhoto(numCams, Config1.Exposure, CamInfo, directory);
         cout << "Waiting until next capture\n";
         startTime = clock();
         if (i == Config1.Iterations-1)
