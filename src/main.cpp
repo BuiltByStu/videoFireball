@@ -501,6 +501,8 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
     int interval = 0;
     int iterations = 0;
     int duration = 0;
+    int startTime = 0;
+    int hour, minute;
     while(mode < 0 || mode > 2)
     {
         cout << "Select capture type:\n";
@@ -508,6 +510,31 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
         cout << "\n0\tEXIT\n";
         cin >> mode;
     }
+    //start time experimental code
+    while(startTime == 0 && mode)
+    {
+        cout << "To set a start time enter 0, otherwise enter 1 to skip\n";
+        cin >> startTime;
+        if(startTime == 0)
+        {
+            cout << "Enter the start time hour (24hr)";
+            cin >> hour;
+            cout << "Enter the start time mins passed hour";
+            cin >> minute;
+            cout << hour << ":" << minute << endl;
+            if(minute > 0 && minute < 60)
+            {
+                if(hour > 0 && hour < 24)
+                    startTime = 1;
+                else
+                    cout << "Invalid time\n";
+            }
+            else
+                cout << "Invalid time\n";
+        }
+    }
+    //end start time
+
     while(interval == 0 && mode)
     {
         cout << "Enter 0 to exit\nEnter how often would you like captures to occur:\n";
