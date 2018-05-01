@@ -74,3 +74,7 @@ void autoPhoto(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* di
 
 //Lens and camera calibration mode
 //void calibration();
+
+//Help prompt from terminal
+void help();
+

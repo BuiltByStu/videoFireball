@@ -38,24 +38,34 @@ int main(int argc, char* argv[])
 	ASI_CAMERA_INFO CamInfo[6];
 	IplImage* capture[6];
 	char* directory;
+	char noDir[] = "./";
 
 	//check that save directory is valid
 	if(argc >= 2)
 	{
-        if (!boost::filesystem::is_directory(argv[1]))
+        if(strcmp(argv[1],"auto")==0)
         {
-            cout << argv[1] <<" is no a valid directory\n";
+            autoMode = 1;
+        }
+        else if(strcmp(argv[1],"help")==0)
+        {
+            help();
+            return -1;
+        }
+        else if (!boost::filesystem::is_directory(argv[1]))
+        {
+            cout << argv[1] <<" is not a valid directory\n";
             return -1;
         }
         else
             directory = argv[1];
 	}
 	else
-        directory = 0;
+        directory = noDir;
 
     if(argc == 3)
     {
-        if (argv[2] == "auto")
+        if(strcmp(argv[2],"auto")==0)
         {
             autoMode = 1;
         }
@@ -591,6 +601,11 @@ void autoPhoto(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* di
         if (i == Config1.Iterations-1)
             while(Config1.Interval-Config1.Exposure/1000-1>= (clock()-startTime)/CLOCKS_PER_SEC){}
     }
+}
+
+void help ()
+{
+    cout << "Made it to help\n";
 }
 
 /*void calibration()
