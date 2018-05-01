@@ -54,7 +54,8 @@ int main(int argc, char* argv[])
         }
         else if (!boost::filesystem::is_directory(argv[1]))
         {
-            cout << argv[1] <<" is not a valid directory\n";
+            cout << argv[1] <<" is not a valid directory.\n";
+            cout << "Enter \"./videofireball help\" for more information.\n";
             return -1;
         }
         else
@@ -81,7 +82,7 @@ int main(int argc, char* argv[])
 
 	if(!readConfiguration(Config1))
 	{
-		cout << "Unable to read camConfig.txt\n";
+		cout << "Unable to read camConfig.vfconf\n";
 		return -1;
 	}
 
@@ -154,7 +155,7 @@ int readConfiguration(Config& Config1)
 	int readCheck = 0;
 
 	string configLine_;
-	ifstream configFile_ ("camConfig.txt");
+	ifstream configFile_ ("camConfig.vfconf");
 
 	if(configFile_.is_open())
 	{
@@ -317,7 +318,7 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
                 break;
             case 5 :
                 if(!readConfiguration(Config1))
-                    cout << "Unable to read camConfig.txt\n";
+                    cout << "Unable to read camConfig.vfconf\n";
                 printConfig(Config1);
                 break;
             /*case 6 :
@@ -605,7 +606,11 @@ void autoPhoto(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* di
 
 void help ()
 {
-    cout << "Made it to help\n";
+    cout << "Video Fireball v0.1\n\n";
+    cout << "To store to local directory:\t./videofireball\n";
+    cout << "To store to an address:\t\t./videofireball <address>\n";
+    cout << "For auto mode:\t\t\t./videofireball auto\n";
+    cout << "\t\t\t\t./videofireball <address> auto\n\n";
 }
 
 /*void calibration()
