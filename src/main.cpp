@@ -502,7 +502,6 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
     int iterations = 0;
     int duration = 0;
     int startTime = 0;
-    int hour, minute;
     while(mode < 0 || mode > 2)
     {
         cout << "Select capture type:\n";
@@ -510,34 +509,10 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
         cout << "\n0\tEXIT\n";
         cin >> mode;
     }
-    //start time experimental code
-    while(startTime == 0 && mode)
-    {
-        cout << "To set a start time enter 0, otherwise enter 1 to skip\n";
-        cin >> startTime;
-        if(startTime == 0)
-        {
-            cout << "Enter the start time hour (24hr)";
-            cin >> hour;
-            cout << "Enter the start time mins passed hour";
-            cin >> minute;
-            cout << hour << ":" << minute << endl;
-            if(minute > 0 && minute < 60)
-            {
-                if(hour > 0 && hour < 24)
-                    startTime = 1;
-                else
-                    cout << "Invalid time\n";
-            }
-            else
-                cout << "Invalid time\n";
-        }
-    }
-    //end start time
 
     while(interval == 0 && mode)
     {
-        cout << "Enter 0 to exit\nEnter how often would you like captures to occur:\n";
+        cout << "Enter 0 to exit\nEnter how often would you like captures to occur(seconds):\n";
         cin >> interval;
         if(interval == 0)
             mode = 0;
@@ -555,7 +530,7 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
     {
         while(!duration && mode)
         {
-            cout << "Enter 0 to exit\nRecord duration:\n";
+            cout << "Enter 0 to exit\nRecord duration(seconds):\n";
             cin >> duration;
 
             if(duration == 0)
@@ -563,7 +538,7 @@ void timedCapture(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_
 
             if(duration && duration >= interval+1)
             {
-                cout << "record duration must be less than interval between captures\n";
+                cout << "Record duration must be less than interval between captures\n";
                 duration = 0;
             }
         }
@@ -598,7 +573,7 @@ void autoVideo(IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INF
         cout << "Waiting until next capture\n";
 
         startTime = clock();
-        if (i == Config1.Iterations-1)
+        if (i <= Config1.Iterations-1)
             while(Config1.Interval-Config1.VideoDuration-1 >= (clock()-startTime)/CLOCKS_PER_SEC){}
     }
 }
