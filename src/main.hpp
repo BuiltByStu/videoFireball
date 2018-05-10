@@ -31,7 +31,7 @@ int cameraDetect();
 
 //Read the config file and store the configuration
 //Config1 is the class which stores the configuration data
-int readConfiguration(Config& Config1);
+int readConfiguration(Config& Config1, int numCams);
 
 //Checks that the cameras can be started and intialised
 //CamInfo is a struct containing information about the camera
@@ -74,6 +74,9 @@ void autoPhoto(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* di
 
 //Lens and camera calibration mode
 //void calibration();
+
+void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
+
 
 //Help prompt from terminal
 void help();

@@ -7,6 +7,7 @@ Description:Sources configuration files and assesses connected cameras
 */
 
 #include "stdio.h"
+#include <stdlib.h>
 #include "ASICamera2.h"
 #include "opencv2/core/core.hpp"
 #include <opencv2/highgui/highgui.hpp>
@@ -80,15 +81,6 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	if(!readConfiguration(Config1))
-	{
-		cout << "Unable to read camConfig.vfconf\n";
-		return -1;
-	}
-
-	//print to check on the configfile
-	printConfig(Config1);
-
 	//check status (and properties) of cameras
 	for(camID = 0; camID < numCams; camID++)
 	{
@@ -100,18 +92,19 @@ int main(int argc, char* argv[])
 
 		printCameraProperties(CamInfo[camID], camID);	//print properties of the camera
 
-		//set camera settings
-		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
-		//set exposure from config class, ASI_FALSE = not auto exposure
-		ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
-		ASISetControlValue(camID,ASI_BANDWIDTHOVERLOAD, 90, ASI_FALSE);
-		//Allow 100% usb bandwidth
-		//ASISetControlValue(camID,ASI_HIGH_SPEED_MODE, 1, ASI_FALSE);
-
         ASIGetCameraProperty(&CamInfo[camID], camID);
         capture[camID] = cvCreateImage(cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight), 8, 1);
         //Set size to max resolution, 16=bit depth, 1=channels
 	}
+
+    if(!readConfiguration(Config1, numCams))
+	{
+		cout << "Unable to read camConfig.vfconf\n";
+		return -1;
+	}
+
+    //print to check on the configfile
+	printConfig(Config1);
 
 	if(!autoMode)
         modeSelectMenu(capture, numCams, Config1, CamInfo, directory);
@@ -149,10 +142,11 @@ int cameraDetect()
 	return numCams;
 }
 
-int readConfiguration(Config& Config1)
+int readConfiguration(Config& Config1, int numCams)
 {
 	int reading[] = {0, 0, 0, 0, 0, 0}; //int array for holding read from config file
 	int readCheck = 0;
+	int camID = 0;
 
 	string configLine_;
 	ifstream configFile_ ("camConfig.vfconf");
@@ -181,6 +175,16 @@ int readConfiguration(Config& Config1)
 
 		readCheck = 1;
 	}
+    for(camID = 0; camID < numCams; camID++)
+    {
+        //set camera settings
+		ASISetControlValue(camID,ASI_EXPOSURE, Config1.Exposure*1000, ASI_FALSE);
+		//set exposure from config class, ASI_FALSE = not auto exposure
+		ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
+		ASISetControlValue(camID,ASI_BANDWIDTHOVERLOAD, 90, ASI_FALSE);
+		//Allow maximum usb bandwidth
+    }
+
 	return readCheck;
 }
 
@@ -292,7 +296,8 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
         cout << "3\tRecord video\n";
         cout << "4\tTimed capture\n";
         cout << "5\tUpdate Config \n";
-        //cout << 6\tCalibration\n";
+        cout << "6\tGain testing\n";
+        //cout << 7\tCalibration\n";
         cout << "\n0\tEXIT\n";
         cin >> modeRead;
         mode = modeRead - '0';
@@ -317,11 +322,14 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
                 timedCapture(capture, numCams, Config1, CamInfo, directory);
                 break;
             case 5 :
-                if(!readConfiguration(Config1))
+                if(!readConfiguration(Config1,numCams))
                     cout << "Unable to read camConfig.vfconf\n";
                 printConfig(Config1);
                 break;
-            /*case 6 :
+            case 6 :
+                gainTest(numCams, Config1, CamInfo, directory);
+                break;
+            /*case 7 :
                 calibration();*/
             default :
                 cout << "Invalid mode, please select again:\n";
@@ -338,6 +346,7 @@ void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* dire
     string fileName;
     char tempCamID;
     long imgSize;
+
 
     imgSize = CamInfo[0].MaxWidth*CamInfo[0].MaxHeight*2; //+1 for 16 bit
 
@@ -375,7 +384,7 @@ void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* dire
         {
             ASIGetDataAfterExp(camID,(unsigned char*)photos[camID]->imageData,imgSize);
             tempCamID = '0' + camID;
-            fileName = photoName + "cam" + tempCamID + ".jpg";
+            fileName = photoName + "cam" + tempCamID + +".jpg";
             cout << fileName << endl;
             cvSaveImage(fileName.c_str(), photos[camID]);
             cout << "Good Capture camera " << camID << endl;
@@ -613,6 +622,33 @@ void help ()
     cout << "\t\t\t\t./videofireball <address> auto\n\n";
 }
 
+void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
+{
+    int gain = 0;
+    int camID = 0;
+    char gainText[10];
+    char extendedDirectory[100];
+    clock_t startTime;
+
+
+    for(gain = 0; gain <= 500; gain+=25)
+    {
+        Config1.Gain = gain;
+        for(camID = 0; camID < numCams; camID++)
+            ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
+
+        snprintf(gainText, sizeof(gainText), "%d", gain);
+        strncpy(extendedDirectory, directory, sizeof(extendedDirectory));
+        strcat(extendedDirectory, gainText);
+        cout << extendedDirectory;
+
+        takePhoto(numCams, Config1.Exposure, CamInfo, extendedDirectory);
+
+        startTime = clock();
+        while(1>= (clock()-startTime)/CLOCKS_PER_SEC){}
+
+    }
+}
 /*void calibration()
 {
     cout << "Calibration mode\n";
