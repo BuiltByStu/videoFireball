@@ -76,8 +76,9 @@ void autoPhoto(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* di
 //void calibration();
 
 void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory);
+//detect movemetn
 
-
+void eventDetect(IplImage* capture[6], int numCams, int exposure);
 //Help prompt from terminal
 void help();
 

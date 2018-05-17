@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 
         ASIGetCameraProperty(&CamInfo[camID], camID);
         capture[camID] = cvCreateImage(cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight), 8, 1);
-        //Set size to max resolution, 16=bit depth, 1=channels
+        //Set size to max resolution, 8=bit depth, 1=channels
 	}
 
     if(!readConfiguration(Config1, numCams))
@@ -297,6 +297,7 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
         cout << "4\tTimed capture\n";
         cout << "5\tUpdate Config \n";
         cout << "6\tGain testing\n";
+        cout << "7\tEvent detection\n";
         //cout << 7\tCalibration\n";
         cout << "\n0\tEXIT\n";
         cin >> modeRead;
@@ -329,7 +330,10 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
             case 6 :
                 gainTest(numCams, Config1, CamInfo, directory);
                 break;
-            /*case 7 :
+            case 7 :
+                eventDetect(capture, numCams, Config1.Exposure);
+                break;
+            /*case 8 :
                 calibration();*/
             default :
                 cout << "Invalid mode, please select again:\n";
@@ -345,6 +349,7 @@ void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* dire
     string photoName;
     string fileName;
     char tempCamID;
+    string tempGain;
     long imgSize;
 
 
@@ -384,7 +389,8 @@ void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* dire
         {
             ASIGetDataAfterExp(camID,(unsigned char*)photos[camID]->imageData,imgSize);
             tempCamID = '0' + camID;
-            fileName = photoName + "cam" + tempCamID + +".jpg";
+
+            fileName = photoName + "cam" + tempCamID +".jpg";
             cout << fileName << endl;
             cvSaveImage(fileName.c_str(), photos[camID]);
             cout << "Good Capture camera " << camID << endl;
@@ -627,7 +633,6 @@ void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* dir
     int gain = 0;
     int camID = 0;
     char gainText[10];
-    char extendedDirectory[100];
     clock_t startTime;
 
 
@@ -637,19 +642,83 @@ void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* dir
         for(camID = 0; camID < numCams; camID++)
             ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
 
-        snprintf(gainText, sizeof(gainText), "%d", gain);
-        strncpy(extendedDirectory, directory, sizeof(extendedDirectory));
-        strcat(extendedDirectory, gainText);
-        cout << extendedDirectory;
 
-        takePhoto(numCams, Config1.Exposure, CamInfo, extendedDirectory);
+        takePhoto(numCams, Config1.Exposure, CamInfo, directory);
 
         startTime = clock();
         while(1>= (clock()-startTime)/CLOCKS_PER_SEC){}
 
     }
 }
-/*void calibration()
+
+
+void eventDetect(IplImage* capture[6], int numCams, int exposure)
 {
-    cout << "Calibration mode\n";
-}*/
+    char keepVid = 0;
+    char cameraName[8];
+    int camID = 0;
+    IplImage * tempFrame = NULL;
+    long frameCount = 0;
+    IplImage* dst = NULL;
+    int difference = 0;
+    int aveDifference = 0;
+    double var = 0;
+    //int droppedFrames = 0;
+
+
+    for(camID = 0; camID < numCams; camID++)
+        ASIStartVideoCapture(camID);
+
+
+    cout << "Press ESC to exit video preview\n";
+
+    for (int y = 0; y<200; y++)
+    {
+
+        if(capture[0])
+            tempFrame = cvCloneImage(capture[0]);
+
+        for(camID = 0; camID < numCams; camID++)
+        {
+            ASIGetVideoData(camID,(unsigned char*)capture[camID]->imageData,capture[camID]->imageSize,exposure);
+        }
+
+        if(tempFrame != NULL)
+        {
+            dst = cvCreateImage(cvSize(3096,2080), 8, 1);
+
+            cvAbsDiff(tempFrame, capture[0], dst);
+            difference = cvCountNonZero(dst);
+            if (aveDifference == 0)
+                aveDifference = difference;
+
+            aveDifference = (int)((aveDifference+difference)/2);
+            //cout<< "Difference: " << difference << endl;
+            //cout<< "AverageVal: " << aveDifference << endl;
+            if(aveDifference)
+            {
+                var = 100*abs(1-(double)difference/(double)aveDifference);
+              //  printf("PercentVar=%lf\n",var);
+            }
+            if (var>5)
+                cout << "Event Detected\n";
+        }
+
+        cvReleaseImage(&tempFrame);
+        cvReleaseImage(&dst);
+
+
+        //Trial event detection-single cam only
+        keepVid = cvWaitKey(1);
+
+    }
+    cvReleaseImage(&tempFrame);
+
+    //close all and free memory
+    cvDestroyAllWindows();
+
+
+    for(camID = 0; camID < numCams; camID++)
+        ASIStopVideoCapture(camID);
+
+}
