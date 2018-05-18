@@ -331,7 +331,7 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
                 gainTest(numCams, Config1, CamInfo, directory);
                 break;
             case 7 :
-                eventDetect(capture, numCams, Config1.Exposure);
+                eventDetect(capture, numCams, Config1.Exposure, CamInfo, Config1.VideoDuration, directory);
                 break;
             /*case 8 :
                 calibration();*/
@@ -652,7 +652,7 @@ void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* dir
 }
 
 
-void eventDetect(IplImage* capture[6], int numCams, int exposure)
+void eventDetect(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], int recTime, char* directory)
 {
     char keepVid = 0;
     char cameraName[8];
@@ -663,17 +663,20 @@ void eventDetect(IplImage* capture[6], int numCams, int exposure)
     int difference = 0;
     int aveDifference = 0;
     double var = 0;
-    //int droppedFrames = 0;
+    int duration = 5*60;
+    clock_t startTime;
+    int threshold = 5;
 
 
-    for(camID = 0; camID < numCams; camID++)
-        ASIStartVideoCapture(camID);
 
 
-    cout << "Press ESC to exit video preview\n";
 
-    for (int y = 0; y<200; y++)
+    startTime = clock();
+    while(duration >= (clock()-startTime)/CLOCKS_PER_SEC)
     {
+        for(camID = 0; camID < numCams; camID++)
+            ASIStartVideoCapture(camID);
+
 
         if(capture[0])
             tempFrame = cvCloneImage(capture[0]);
@@ -692,31 +695,35 @@ void eventDetect(IplImage* capture[6], int numCams, int exposure)
             if (aveDifference == 0)
                 aveDifference = difference;
 
-            aveDifference = (int)((aveDifference+difference)/2);
-            //cout<< "Difference: " << difference << endl;
-            //cout<< "AverageVal: " << aveDifference << endl;
-            if(aveDifference)
+            if(difference)
             {
-                var = 100*abs(1-(double)difference/(double)aveDifference);
-              //  printf("PercentVar=%lf\n",var);
+                aveDifference = (int)((aveDifference+difference)/2);
+                cout<< "Difference: " << difference << endl;
+                cout<< "AverageVal: " << aveDifference << endl;
+                if(aveDifference)
+                {
+                    var = 100*abs(1-(double)difference/(double)aveDifference);
+                    printf("PercentVar=%lf\n",var);
+                }
+
+                if (var > threshold)
+                {
+                    cout << "Event Detected\n";
+                    recordVideo(capture, numCams, exposure, CamInfo, recTime, directory);
+                    aveDifference = 0;
+                    var = 0;
+                }
             }
-            if (var>5)
-                cout << "Event Detected\n";
+
         }
 
         cvReleaseImage(&tempFrame);
         cvReleaseImage(&dst);
 
-
-        //Trial event detection-single cam only
-        keepVid = cvWaitKey(1);
-
     }
     cvReleaseImage(&tempFrame);
 
     //close all and free memory
-    cvDestroyAllWindows();
-
 
     for(camID = 0; camID < numCams; camID++)
         ASIStopVideoCapture(camID);
