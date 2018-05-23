@@ -2,16 +2,16 @@
 File:		main.cpp
 Authour:	Stuart Hahn
 Version:	0.1
-Date: 		29/03/18
-Description:Sources configuration files and assesses connected cameras
+Date: 		23/05/18
+Description:Main functions for videoFireball program
 */
 
-#include "stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "ASICamera2.h"
 #include "opencv2/core/core.hpp"
 #include <opencv2/highgui/highgui.hpp>
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include "main.hpp"
@@ -26,7 +26,7 @@ Description:Sources configuration files and assesses connected cameras
 
 using namespace std;
 
-//Screen resolution-find better way to get this
+//Screen resolution
 #define HORIRES 1920
 #define VERTRES 1080
 
@@ -45,9 +45,7 @@ int main(int argc, char* argv[])
 	if(argc >= 2)
 	{
         if(strcmp(argv[1],"auto")==0)
-        {
             autoMode = 1;
-        }
         else if(strcmp(argv[1],"help")==0)
         {
             help();
@@ -68,11 +66,8 @@ int main(int argc, char* argv[])
     if(argc == 3)
     {
         if(strcmp(argv[2],"auto")==0)
-        {
             autoMode = 1;
-        }
     }
-
 
 	numCams = cameraDetect();
 	if(!numCams)
@@ -91,7 +86,6 @@ int main(int argc, char* argv[])
 		}
 
 		printCameraProperties(CamInfo[camID], camID);	//print properties of the camera
-
         ASIGetCameraProperty(&CamInfo[camID], camID);
         capture[camID] = cvCreateImage(cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight), 8, 1);
         //Set size to max resolution, 8=bit depth, 1=channels
@@ -182,7 +176,6 @@ int readConfiguration(Config& Config1, int numCams)
 		//set exposure from config class, ASI_FALSE = not auto exposure
 		ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
 		ASISetControlValue(camID,ASI_BANDWIDTHOVERLOAD, 90, ASI_FALSE);
-		//Allow maximum usb bandwidth
     }
 
 	return readCheck;
@@ -231,11 +224,9 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
     char keepVid = 0;
     char cameraName[8];
     int camID = 0;
-    //int droppedFrames = 0;
 
     for(camID = 0; camID < numCams; camID++)
         ASIStartVideoCapture(camID);
-
 
     cout << "Press ESC to exit video preview\n";
 
@@ -272,15 +263,10 @@ void previewVideo(IplImage* capture[6], int numCams, int exposure)
         }
         keepVid = cvWaitKey(1);
     }
-    //close all and free memory
-    cvDestroyAllWindows();
+    cvDestroyAllWindows();     //close all and free memory
 
     for(camID = 0; camID < numCams; camID++)
-    {
-        //ASIGetDroppedFrames(camID, &droppedFrames);
-        //cout << "Cam " << camID << " dropped Frames: " << droppedFrames << endl;
         ASIStopVideoCapture(camID);
-    }
 }
 
 void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* directory)
@@ -298,7 +284,6 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
         cout << "5\tUpdate Config \n";
         cout << "6\tGain testing\n";
         cout << "7\tEvent detection\n";
-        //cout << 7\tCalibration\n";
         cout << "\n0\tEXIT\n";
         cin >> modeRead;
         mode = modeRead - '0';
@@ -333,8 +318,6 @@ void modeSelectMenu (IplImage* capture[6], int numCams, Config Config1, ASI_CAME
             case 7 :
                 eventDetect(capture, numCams, Config1.Exposure, CamInfo, Config1.VideoDuration, directory);
                 break;
-            /*case 8 :
-                calibration();*/
             default :
                 cout << "Invalid mode, please select again:\n";
         }
@@ -349,17 +332,12 @@ void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* dire
     string photoName;
     string fileName;
     char tempCamID;
-    string tempGain;
     long imgSize;
 
 
     imgSize = CamInfo[0].MaxWidth*CamInfo[0].MaxHeight*2; //+1 for 16 bit
 
-    if(directory != 0)
-        photoName = directory + fileName;
-
-
-    photoName = timeStamp();
+    photoName = directory + timeStamp();
 
     for(camID = 0; camID < numCams; camID++)
     {
@@ -391,7 +369,6 @@ void takePhoto(int numCams, int exposure, ASI_CAMERA_INFO CamInfo[6], char* dire
             tempCamID = '0' + camID;
 
             fileName = photoName + "cam" + tempCamID +".jpg";
-            cout << fileName << endl;
             cvSaveImage(fileName.c_str(), photos[camID]);
             cout << "Good Capture camera " << camID << endl;
         }
@@ -415,7 +392,8 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     char tempCamID;
     clock_t startTime;
 
-    videoName = timeStamp();
+    videoName = directory + timeStamp();
+
     for(camID = 0; camID < numCams; camID++)
     {
         ASIStartVideoCapture(camID);
@@ -423,8 +401,6 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
         //make name for file
         tempCamID = '0' + camID;
         fileName = videoName + "cam" + tempCamID + ".avi";
-        if(directory != 0)     //set directory in file name if given
-            fileName = directory + fileName;
 
         if(capture[camID]->depth == 16)
             writer[camID] = cvCreateVideoWriter(fileName.c_str(),CV_FOURCC('M','J','P','G'), 30,cvSize(CamInfo[camID].MaxWidth,CamInfo[camID].MaxHeight),0);
@@ -434,8 +410,7 @@ void recordVideo(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
 
     cout << "recording " << recTime << " second video..please wait\n";
 
-    //set start time
-    startTime = clock();
+    startTime = clock();    //set start time
 
     while(recTime >= (clock()-startTime)/CLOCKS_PER_SEC)
     {
@@ -646,7 +621,6 @@ void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* dir
 
         startTime = clock();
         while(1>= (clock()-startTime)/CLOCKS_PER_SEC){}
-
     }
 }
 
@@ -671,7 +645,6 @@ void eventDetect(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     {
         for(camID = 0; camID < numCams; camID++)
             ASIStartVideoCapture(camID);
-
 
         if(capture[0])
             tempFrame = cvCloneImage(capture[0]);
@@ -709,18 +682,13 @@ void eventDetect(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
                     var = 0;
                 }
             }
-
         }
 
         cvReleaseImage(&tempFrame);
         cvReleaseImage(&dst);
-
     }
-    cvReleaseImage(&tempFrame);
-
-    //close all and free memory
+    cvReleaseImage(&tempFrame);    //close all and free memory
 
     for(camID = 0; camID < numCams; camID++)
         ASIStopVideoCapture(camID);
-
 }
