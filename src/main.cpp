@@ -642,7 +642,6 @@ void gainTest(int numCams, Config Config1, ASI_CAMERA_INFO CamInfo[6], char* dir
         for(camID = 0; camID < numCams; camID++)
             ASISetControlValue(camID,ASI_GAIN,Config1.Gain, ASI_FALSE);
 
-
         takePhoto(numCams, Config1.Exposure, CamInfo, directory);
 
         startTime = clock();
@@ -666,10 +665,6 @@ void eventDetect(IplImage* capture[6], int numCams, int exposure, ASI_CAMERA_INF
     int duration = 5*60;
     clock_t startTime;
     int threshold = 5;
-
-
-
-
 
     startTime = clock();
     while(duration >= (clock()-startTime)/CLOCKS_PER_SEC)
