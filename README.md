@@ -10,7 +10,7 @@ Compatible only with linux, currently tested with:
 	
 Note that installation of INDI (Instrument Neutral Distributed Interface) drivers is not required for this camera, although it can be used with INDI drivers if preferred. 
 
-# Installation Guide
+## Installation Guide
 
 ### Step 1: Install OpenCV
 One of the easiest ways to do this is using milq's script: https://github.com/milq/milq/blob/master/scripts/bash/install-opencv.sh
