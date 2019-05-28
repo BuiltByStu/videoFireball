@@ -5,11 +5,21 @@ Based on the ASI SDF produced by ZWO, utilising OpenCV3.3 libraries.
 Compatible only with linux, currently tested with:
 	Ubuntu 16.04 LTS 64-bit,
 	Debian 9.4.0 64-bit
+	
+Note that installation of INDI (Instrument Neutral Distributed Interface) drivers is not required for this camera, although it can be used with INDI drivers if preferred. 
 
 Installation Guide
 
-Retrieve the videoFireball program by copying from the complete folder “videoFireball” from the Appendix K or by cloning the GitHub repository:
-https://github.com/BuiltByStu/videoFireball
+Step 1: Install OpenCV
+One of the easiest ways to do this is using milq's script: https://github.com/milq/milq/blob/master/scripts/bash/install-opencv.sh
+
+Step 2: Install pcap and boost:
+Using the following commands, install pcap and boost.
+	$ apt-get install libpcap-dev
+	$ apt-get install libboost-all-dev
+
+Step3: Install device manager rules for the ASI camera
+Retrieve the videoFireball program by copying from the complete folder “videoFireball” from this repository (https://github.com/BuiltByStu/videoFireball) 
 The device manager udev must be given rules for use of the ZWO camera. To achieve this, in the location where the videoFireball folder has been copied or cloned, navigate to the folder videoFireball\lib. Run the following commands with the camera connected to the system using a USB3.0 port:
 
 	$ install asi.rules /lib/udev/rules.d
